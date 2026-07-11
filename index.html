@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which way should the axes point?</title>
+<style>
+/* ============================================================
+   TOKENS — light and dark schemes (prefers-color-scheme).
+   Palette values are from a validated categorical palette;
+   every method gets one accent used consistently everywhere.
+   ============================================================ */
+:root {
+  --page:        #f9f9f7;
+  --surface:     #fcfcfb;
+  --ink:         #0b0b0b;
+  --ink-2:       #52514e;
+  --muted:       #898781;
+  --grid:        #e1e0d9;
+  --baseline:    #c3c2b7;
+  --ring:        rgba(11,11,11,0.10);
+  --good:        #006300;
+
+  /* axes of the playground (factor 1 / factor 2) */
+  --axis1:       #2a78d6;
+  --axis2:       #e34948;
+
+  /* one accent per rotation method */
+  --m-varimax:   #008300;
+  --m-oblimin:   #1baf7a;
+  --m-geomin:    #eda100;
+  --m-target:    #eb6834;
+  --m-leximax:   #4a3aa7;
+
+  --chip-bg:     #f0efec;
+  --shadow:      0 1px 3px rgba(11,11,11,.07), 0 4px 14px rgba(11,11,11,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page:      #0d0d0d;
+    --surface:   #1a1a19;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --muted:     #898781;
+    --grid:      #2c2c2a;
+    --baseline:  #383835;
+    --ring:      rgba(255,255,255,0.10);
+    --good:      #0ca30c;
+
+    --axis1:     #3987e5;
+    --axis2:     #e66767;
+
+    --m-varimax: #008300;
+    --m-oblimin: #199e70;
+    --m-geomin:  #c98500;
+    --m-target:  #d95926;
+    --m-leximax: #9085e9;
+
+    --chip-bg:   #262624;
+    --shadow:    0 1px 3px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+  }
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 3rem); letter-spacing: -.02em; }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: -.015em; }
+h3 { font-size: 1.15rem; }
+p  { margin: 0 0 1em; color: var(--ink-2); max-width: 70ch; }
+p strong, li strong { color: var(--ink); }
+a  { color: var(--axis1); }
+section { padding: 4.5rem 1.25rem; }
+.wrap { max-width: 1120px; margin: 0 auto; }
+.lede { font-size: 1.1rem; }
+button { font: inherit; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em;
+       background: var(--chip-bg); padding: .1em .35em; border-radius: 4px; }
+
+/* collapsible math footnotes */
+details.math {
+  margin: .6rem 0 1rem;
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  background: var(--surface);
+  max-width: 70ch;
+}
+details.math summary {
+  cursor: pointer; padding: .5rem .8rem; color: var(--ink-2);
+  font-size: .9rem; user-select: none;
+}
+details.math summary::marker { color: var(--muted); }
+details.math .body { padding: 0 .9rem .8rem; font-size: .9rem; color: var(--ink-2); }
+details.math code { white-space: nowrap; }
+
+/* ============================================================
+   STICKY NAV
+   ============================================================ */
+nav#topnav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--page) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--grid);
+}
+nav#topnav .wrap {
+  display: flex; align-items: center; gap: .25rem;
+  padding: .55rem 1.25rem; overflow-x: auto; white-space: nowrap;
+}
+nav#topnav .brand { font-weight: 650; font-size: .95rem; margin-right: auto; color: var(--ink); text-decoration: none; }
+nav#topnav a.navlink {
+  text-decoration: none; color: var(--ink-2); font-size: .9rem;
+  padding: .3rem .7rem; border-radius: 999px;
+}
+nav#topnav a.navlink:hover { background: var(--chip-bg); }
+nav#topnav a.navlink.active { background: var(--chip-bg); color: var(--ink); font-weight: 600; }
+
+/* ============================================================
+   S1 — HOOK
+   ============================================================ */
+#s1 { padding-top: 3.5rem; }
+#s1 .hero {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 2.5rem; align-items: center;
+}
+@media (max-width: 860px) { #s1 .hero { grid-template-columns: 1fr; } }
+.subtitle { font-size: 1.15rem; color: var(--ink-2); margin-top: -.4rem; }
+.hook-fig {
+  background: var(--surface); border: 1px solid var(--grid); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 1rem;
+}
+.hook-fig .caption { font-size: .85rem; color: var(--muted); text-align: center; margin: .5rem 0 0; }
+.hook-grid { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; }
+@media (max-width: 520px) { .hook-grid { grid-template-columns: 1fr; } }
+table.mini-loadings { border-collapse: collapse; font-size: .78rem; }
+table.mini-loadings th, table.mini-loadings td {
+  padding: .18rem .5rem; text-align: right; font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--grid); color: var(--ink-2);
+}
+table.mini-loadings th { color: var(--muted); font-weight: 600; }
+table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-align: left; color: var(--ink-2); }
+.btn {
+  display: inline-block; border: none; cursor: pointer; text-decoration: none;
+  background: var(--ink); color: var(--page); font-weight: 600;
+  padding: .65rem 1.2rem; border-radius: 999px; font-size: .95rem;
+}
+.btn:hover { opacity: .88; }
+
+/* ============================================================
+   S2 — PLAYGROUND
+   ============================================================ */
+#s2 { background: var(--surface); border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
+.play-grid {
+  display: grid; grid-template-columns: minmax(340px, 1.1fr) minmax(320px, .9fr);
+  gap: 2rem; align-items: start; margin-top: 1.5rem;
+}
+@media (max-width: 900px) { .play-grid { grid-template-columns: 1fr; } }
+.panel {
+  background: var(--page); border: 1px solid var(--grid); border-radius: 14px;
+  padding: 1rem; box-shadow: var(--shadow);
+}
+#scatter-wrap { position: sticky; top: 64px; }
+@media (max-width: 900px) { #scatter-wrap { position: static; } }
+#scatter { width: 100%; height: auto; display: block; touch-action: none; }
+.scatter-note { font-size: .82rem; color: var(--muted); margin: .5rem 0 0; }
+
+/* axis handles — all strokes are non-scaling (screen px), set via
+   vector-effect attributes in JS, so widths here are pixel widths */
+.axis-line { stroke-width: 2.5; }
+.axis-line.a1 { stroke: var(--axis1); }
+.axis-line.a2 { stroke: var(--axis2); }
+.axis-handle { cursor: grab; }
+.axis-handle:active { cursor: grabbing; }
+.axis-handle circle.knob { stroke-width: 2; }
+.axis-handle:focus { outline: none; }
+.axis-handle:focus circle.halo { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+.pt { fill: var(--ink-2); }
+.pt.open { fill: transparent; stroke: var(--ink-2); }
+.pt.hl { fill: var(--ink); }
+.pt.open.hl { fill: transparent; stroke: var(--ink); }
+.proj { stroke-dasharray: 5 4; stroke-width: 1.5; opacity: .8; }
+
+/* snap buttons */
+.snap-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.snap {
+  border: 1.5px solid var(--mcol, var(--grid)); background: transparent; color: var(--ink);
+  padding: .42rem .85rem; border-radius: 999px; cursor: pointer; font-size: .88rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: .45rem;
+}
+.snap .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mcol); }
+.snap:hover { background: var(--chip-bg); }
+.snap[disabled] { opacity: .45; cursor: default; }
+.snap.run { background: var(--m-leximax); border-color: var(--m-leximax); color: #fff; }
+.snap.run:hover { opacity: .9; }
+
+#lexi-log {
+  margin-top: .8rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .78rem; color: var(--ink-2); background: var(--chip-bg);
+  border-radius: 8px; padding: .6rem .8rem; min-height: 1.4em;
+  max-height: 9.5em; overflow-y: auto; white-space: pre-wrap; display: none;
+}
+#lexi-log.show { display: block; }
+.badge-converged {
+  display: inline-block; margin-left: .4rem; font-size: .75rem; font-weight: 700;
+  color: var(--good); border: 1px solid var(--good); border-radius: 999px; padding: .05rem .5rem;
+}
+
+/* right column widgets */
+.widget { margin-bottom: 1.1rem; }
+.widget h4 { font-size: .82rem; text-transform: uppercase; letter-spacing: .06em;
+             color: var(--muted); margin: 0 0 .5rem; font-weight: 650; }
+.widget h4 .info { cursor: help; border-bottom: 1px dotted var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* name chips — the money shot */
+.name-chips { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+@media (max-width: 420px) { .name-chips { grid-template-columns: 1fr; } }
+.name-chip {
+  border: 2px solid var(--ac); border-radius: 12px; padding: .6rem .8rem; background: var(--surface);
+  min-height: 4.6rem;
+}
+.name-chip .axis-tag { font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: .35rem; }
+.name-chip .axis-tag::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--ac); }
+.name-chip .name { font-size: 1.25rem; font-weight: 700; color: var(--ink); margin-top: .15rem;
+  overflow-wrap: anywhere; }
+.name-chip .name.none { color: var(--muted); font-weight: 500; }
+@keyframes chipflash { 0% { transform: scale(1.06); } 100% { transform: scale(1); } }
+.name-chip .name.flash { animation: chipflash .25s ease-out; }
+@media (prefers-reduced-motion: reduce) { .name-chip .name.flash { animation: none; } }
+
+/* loading bar chart */
+#bars-svg { width: 100%; height: auto; display: block; }
+#bars-svg .bar.a1 { fill: var(--axis1); }
+#bars-svg .bar.a2 { fill: var(--axis2); }
+#bars-svg text { fill: var(--muted); font-size: 8.5px; }
+#bars-svg .zero { stroke: var(--baseline); stroke-width: 1; }
+#bars-svg .rowband { fill: var(--ink); opacity: 0; }
+#bars-svg .rowband.hl { opacity: .06; }
+#bars-svg .colhead { font-size: 9.5px; font-weight: 700; fill: var(--ink-2); }
+
+/* meters */
+.meter { display: grid; grid-template-columns: 6.2rem 1fr auto; gap: .6rem; align-items: center;
+         margin-bottom: .45rem; }
+.meter .lbl { font-size: .82rem; color: var(--ink-2); display: flex; align-items: center; gap: .35rem; }
+.meter .lbl .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.meter .track { height: 8px; border-radius: 4px; background: var(--chip-bg); overflow: hidden; }
+.meter .fill { height: 100%; border-radius: 4px; width: 0%; }
+.meter .val { font-size: .8rem; font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 4.5ch; text-align: right; }
+.meter .dir { font-size: .7rem; color: var(--muted); }
+
+/* readouts */
+.readout-row { display: flex; flex-wrap: wrap; gap: .7rem; }
+.readout {
+  background: var(--surface); border: 1px solid var(--grid); border-radius: 10px;
+  padding: .5rem .8rem; flex: 1 1 8rem;
+}
+.readout .k { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.readout .v { font-size: 1.15rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.readout .v .check { color: var(--good); }
+.fit-ok { color: var(--good); font-weight: 700; }
+.warn-singular {
+  display: none; margin: .6rem 0 0; font-size: .85rem; color: var(--ink-2);
+  background: var(--chip-bg); border-radius: 8px; padding: .5rem .8rem;
+}
+.warn-singular.show { display: block; }
+.degrade .widget:not(.always) { opacity: .35; pointer-events: none; }
+
+/* tooltip (shared) */
+#tooltip {
+  position: fixed; z-index: 90; pointer-events: none; display: none;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--grid);
+  border-radius: 10px; box-shadow: var(--shadow); padding: .55rem .75rem;
+  font-size: .82rem; max-width: 20rem; line-height: 1.4;
+}
+#tooltip .tt-val { font-weight: 700; }
+#tooltip .tt-sub { color: var(--ink-2); }
+#tooltip .tt-muted { color: var(--muted); font-size: .76rem; }
+
+/* ============================================================
+   S3 — GALLERY
+   ============================================================ */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.1rem; margin-top: 1.5rem; }
+.card {
+  background: var(--surface); border: 1px solid var(--grid); border-top: 4px solid var(--mcol);
+  border-radius: 14px; padding: 1rem; box-shadow: var(--shadow); display: flex; flex-direction: column;
+}
+.card h3 { display: flex; align-items: center; gap: .5rem; }
+.card h3 .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--mcol); flex: none; }
+.card p { font-size: .9rem; }
+.card .mini { margin-top: auto; }
+.mini svg { width: 100%; height: auto; display: block; background: var(--page);
+            border: 1px solid var(--grid); border-radius: 10px; }
+.mini .mini-meter { display: flex; align-items: center; gap: .5rem; margin-top: .45rem; font-size: .74rem; color: var(--muted); }
+.mini .mini-meter .track { flex: 1; height: 6px; border-radius: 3px; background: var(--chip-bg); overflow: hidden; }
+.mini .mini-meter .fill { height: 100%; background: var(--mcol); border-radius: 3px; }
+.mini .mini-name { font-size: .78rem; color: var(--ink-2); margin-top: .4rem; min-height: 1.3em;
+                   font-variant-numeric: tabular-nums; }
+.loop-diagram { margin: .4rem 0; }
+.loop-diagram svg { width: 100%; height: auto; }
+.blindspot {
+  margin-top: 1.6rem; padding: 1rem 1.2rem; border-left: 4px solid var(--m-leximax);
+  background: var(--surface); border-radius: 0 12px 12px 0; max-width: 70ch;
+}
+.blindspot p { margin: 0; }
+
+/* ============================================================
+   S4 — CASE STUDIES (tabs)
+   ============================================================ */
+#s4 { background: var(--surface); border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
+.tabs { display: flex; gap: .4rem; margin: 1.2rem 0; flex-wrap: wrap; }
+.tab {
+  border: 1px solid var(--grid); background: var(--page); color: var(--ink-2);
+  border-radius: 999px; padding: .45rem 1rem; cursor: pointer; font-size: .9rem; font-weight: 600;
+}
+.tab[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+.tabpanel { display: none; }
+.tabpanel.show { display: block; }
+
+.heatmaps { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; margin-top: 1rem; }
+@media (max-width: 780px) { .heatmaps { grid-template-columns: 1fr; } }
+.heatmap-card { background: var(--page); border: 1px solid var(--grid); border-radius: 14px; padding: 1rem; overflow-x: auto; }
+.heatmap-card h4 { margin: 0 0 .6rem; font-size: .95rem; }
+.heatmap-card h4 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: .4rem; }
+table.heat { border-collapse: separate; border-spacing: 2px; font-size: .68rem; }
+table.heat th { font-weight: 650; color: var(--ink-2); padding: .15rem .3rem; text-align: center; }
+table.heat th.rowh { text-align: right; font-weight: 500; color: var(--muted); cursor: help;
+                     font-family: ui-monospace, Menlo, monospace; }
+table.heat td { width: 3.2rem; min-width: 3.2rem; height: 1.15rem; text-align: center;
+                border-radius: 3px; font-variant-numeric: tabular-nums; }
+table.heat.big td { width: 3.6rem; height: 2.2rem; font-size: .8rem; }
+table.heat td.diag { outline: 2px solid var(--ink); outline-offset: -2px; }
+.callout {
+  margin-top: 1.4rem; padding: 1rem 1.2rem; border-left: 4px solid var(--axis2);
+  background: var(--page); border-radius: 0 12px 12px 0; max-width: 72ch;
+}
+.callout p { margin: 0; font-size: .95rem; }
+.scale-legend { display: flex; align-items: center; gap: .5rem; font-size: .75rem; color: var(--muted); margin-top: .8rem; }
+.scale-legend .ramp { height: 8px; width: 130px; border-radius: 4px; }
+.toggle-row { display: flex; align-items: center; gap: .6rem; margin: 1rem 0; flex-wrap: wrap; }
+.toggle-row .tgl {
+  border: 1.5px solid var(--grid); background: var(--page); color: var(--ink-2);
+  padding: .4rem .9rem; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: .88rem;
+}
+.toggle-row .tgl[aria-pressed="true"] { border-color: var(--mc); color: var(--ink); background: var(--chip-bg); }
+.meanphi { font-size: 1rem; color: var(--ink-2); }
+.meanphi b { font-size: 1.35rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   S5 — SCOREBOARD
+   ============================================================ */
+.scorewrap { overflow-x: auto; margin-top: 1.2rem; background: var(--surface);
+             border: 1px solid var(--grid); border-radius: 14px; padding: .5rem; }
+table.score { border-collapse: collapse; width: 100%; min-width: 620px; font-size: .88rem; }
+table.score th, table.score td { padding: .5rem .7rem; text-align: right; font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--grid); }
+table.score tr:last-child td { border-bottom: none; }
+table.score th { color: var(--muted); font-weight: 650; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+table.score td:first-child, table.score th:first-child { text-align: left; }
+table.score .up { color: var(--good); font-weight: 650; }
+table.score .down { color: var(--axis2); font-weight: 650; }
+table.score .flat { color: var(--muted); }
+.bullets { margin: 1.5rem 0 0; padding-left: 1.2rem; max-width: 72ch; }
+.bullets li { margin-bottom: .7rem; color: var(--ink-2); }
+.notes { font-size: .85rem; color: var(--muted); max-width: 72ch; }
+footer { border-top: 1px solid var(--grid); padding: 2rem 1.25rem 3rem; font-size: .85rem; color: var(--muted); }
+footer p { color: var(--muted); }
+
+/* data-missing message */
+#data-missing {
+  display: none; margin: 3rem auto; max-width: 34rem; background: var(--surface);
+  border: 1px solid var(--grid); border-radius: 14px; padding: 1.5rem; box-shadow: var(--shadow);
+}
+#data-missing.show { display: block; }
+#data-missing h3 { margin-top: 0; }
+.app-hidden { display: none !important; }
+
+/* small screens */
+@media (max-width: 400px) {
+  section { padding: 3rem .8rem; }
+}
+</style>
+</head>
+<body>
+
+<nav id="topnav" aria-label="Sections">
+  <div class="wrap">
+    <a class="brand" href="#s1">Axes ⟲</a>
+    <a class="navlink" href="#s1">Intro</a>
+    <a class="navlink" href="#s2">Playground</a>
+    <a class="navlink" href="#s3">Methods</a>
+    <a class="navlink" href="#s4">Case studies</a>
+    <a class="navlink" href="#s5">Scoreboard</a>
+  </div>
+</nav>
+
+<!-- Shown only if website_data.json cannot be loaded -->
+<div id="data-missing">
+  <h3>Data file not found</h3>
+  <p>This page needs <code>website_data.json</code> in the same folder as
+  <code>index.html</code>.</p>
+  <p>Browsers also block <code>fetch()</code> when a page is opened directly from
+  the file system, so serve the folder with any local static server, e.g.</p>
+  <p><code>python3 -m http.server</code></p>
+  <p>then open <code>http://localhost:8000/</code>.</p>
+</div>
+
+<div id="app" class="app-hidden">
+
+<!-- ============================================================ S1 — HOOK -->
+<section id="s1">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <h1>Which way should the axes point?</h1>
+        <p class="subtitle">Factor rotation, and what happens when the words get a vote.</p>
+        <p class="lede"><strong>The last unexamined choice in factor analysis.</strong>
+        When researchers factor-analyze a questionnaire, they get a <em>map</em>: every item
+        becomes a point, and items that people answer alike sit near each other.
+        But the data fix only the <em>points</em> — not the axes drawn through them.
+        Rotate the axes any way you like and the model fits your data <em>exactly</em> as well.</p>
+        <p>An item's “loadings” are just its coordinates on whichever axes you chose.
+        The factor a researcher eventually names — “Depression”, “Extraversion” — is an
+        <em>axis</em>, and where it points is pure convention. Rotation methods are the
+        rules we use to choose.</p>
+        <a class="btn" href="#s2">So which one do we report? ↓</a>
+      </div>
+      <div class="hook-fig">
+        <div class="hook-grid">
+          <svg id="hook-svg" viewBox="-1.15 -1.15 2.3 2.3" role="img"
+               aria-label="A fixed cloud of item points with two axes slowly spinning through it"></svg>
+          <table class="mini-loadings" aria-label="Loadings of a few items, updating as the axes spin">
+            <thead><tr><th>item</th><th>F1</th><th>F2</th></tr></thead>
+            <tbody id="hook-tbody"></tbody>
+          </table>
+        </div>
+        <p class="caption">The points never move. Only the axes do — and <strong>every one of
+        these fits your data identically.</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ S2 — PLAYGROUND -->
+<section id="s2">
+  <div class="wrap">
+    <h2>The playground: rotate the axes yourself</h2>
+    <p>Below are the 28 items of a real questionnaire measuring procrastination and anxiety,
+    factor-analyzed into a two-dimensional map.
+    <strong>Drag either colored handle</strong> to point an axis anywhere you like — the axes
+    don't have to stay perpendicular (that's an <em>oblique</em> rotation, and it means the
+    factors are allowed to correlate). Everything on the right updates live, including the
+    <strong>name</strong> a language model retrieves for each axis. Hover any point to see the item.</p>
+    <p style="font-size:.9rem">Keyboard: <kbd>Tab</kbd> to an axis handle, then arrow keys nudge it 1°.</p>
+
+    <div class="play-grid">
+      <!-- LEFT: scatter + controls -->
+      <div id="scatter-wrap">
+        <div class="panel">
+          <svg id="scatter" viewBox="-1.15 -1.15 2.3 2.3"
+               aria-label="Scatter plot of 28 questionnaire items with two draggable factor axes"></svg>
+          <p class="scatter-note" id="scatter-legend"></p>
+          <p class="warn-singular" id="warn-singular">⚠️ The two axes are nearly on top of each
+          other — the coordinates become unstable (near-singular), so the readouts are paused.
+          Pull them apart to continue.</p>
+        </div>
+        <div class="snap-row" id="snap-row" role="group" aria-label="Snap axes to a method's solution"></div>
+        <div class="snap-row">
+          <button class="snap run" id="run-leximax">▶ Run leximax</button>
+          <span id="converged-slot"></span>
+        </div>
+        <div id="lexi-log" aria-live="polite"></div>
+      </div>
+
+      <!-- RIGHT: live readouts -->
+      <div>
+        <div class="widget always">
+          <h4>Retrieved factor names
+            <span class="info" title="Names are retrieved from a frozen 369,703-word construct lexicon. That retrieval needs the full embedding lexicon, so it was precomputed on a 3° grid of axis angles; the browser looks up the nearest grid cell.">ⓘ how?</span></h4>
+          <div class="name-chips">
+            <div class="name-chip" style="--ac: var(--axis1)">
+              <div class="axis-tag">Axis 1 · <span id="ang1">0°</span></div>
+              <div class="name" id="name1">—</div>
+            </div>
+            <div class="name-chip" style="--ac: var(--axis2)">
+              <div class="axis-tag">Axis 2 · <span id="ang2">90°</span></div>
+              <div class="name" id="name2">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="widget">
+          <h4>Criterion meters — what each method scores</h4>
+          <div id="meters"></div>
+          <details class="math">
+            <summary>The formulas being computed live</summary>
+            <div class="body">
+              With axis angles θ₁, θ₂, each axis is a unit vector
+              <code>u = [cos θ, sin θ]</code> and <code>T = [u₁ u₂]</code>.
+              Loadings are <code>L = A₀ · (T⁻¹)ᵀ</code> and factor correlations
+              <code>Φ = TᵀT</code>. Then:<br>
+              · <b>varimax</b> (maximize): Σ over factors of var(squared loadings in that column)<br>
+              · <b>quartimin</b> (minimize): Σᵢ L²ᵢ₁·L²ᵢ₂ — the cross-loading product<br>
+              · <b>geomin</b> (minimize): Σᵢ √((L²ᵢ₁+.01)(L²ᵢ₂+.01))<br>
+              · <b>leximax nameability</b>: mean cosine between each axis's meaning direction and
+              its retrieved term's embedding — needs the 369,703-word lexicon, so it's read from
+              the precomputed grid. Meters are scaled to the range each criterion takes over all
+              axis orientations.
+            </div>
+          </details>
+        </div>
+
+        <div class="widget">
+          <h4>Loadings — each item's coordinates on your axes</h4>
+          <svg id="bars-svg" aria-label="Bar chart of every item's loading on axis 1 and axis 2"></svg>
+        </div>
+
+        <div class="widget always">
+          <h4>Invariants</h4>
+          <div class="readout-row">
+            <div class="readout">
+              <div class="k">factor correlation</div>
+              <div class="v" id="phi-readout">.00</div>
+            </div>
+            <div class="readout" title="The model-implied item covariation L·Φ·Lᵀ is recomputed on every frame and compared against its value at the oblimin solution. It never changes — rotation cannot alter fit.">
+              <div class="k">model fit</div>
+              <div class="v"><span class="fit-ok" id="fit-check">✓</span> <span style="font-size:.8rem; font-weight:500" id="fit-detail">identical under all rotations</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ S3 — GALLERY -->
+<section id="s3">
+  <div class="wrap">
+    <h2>Five rules for pointing the axes</h2>
+    <p>Since every orientation fits equally well, each rotation method is just a
+    <em>criterion</em> — a score that says which orientation to prefer. Watch each one pull
+    the axes from a random start to its favorite answer.</p>
+    <div class="cards" id="cards"></div>
+    <div class="blindspot">
+      <p><strong>Four rules, one blind spot.</strong> Varimax, quartimin, geomin and target
+      rotation look only at the <em>arithmetic pattern</em> of the loading numbers. The words
+      of the items never enter the computation — even though the entire purpose of rotation
+      is to make the factors verbally interpretable. Leximax makes the words the criterion.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ S4 — CASES -->
+<section id="s4">
+  <div class="wrap">
+    <h2>Case studies</h2>
+    <div class="tabs" role="tablist" aria-label="Case studies">
+      <button class="tab" id="tab-dass" role="tab" aria-selected="true" aria-controls="panel-dass">DASS: naming as diagnosis</button>
+      <button class="tab" id="tab-big5" role="tab" aria-selected="false" aria-controls="panel-big5">Human × semantic Big Five</button>
+    </div>
+
+    <div class="tabpanel show" id="panel-dass" role="tabpanel" aria-labelledby="tab-dass">
+      <p>The DASS measures depression, anxiety and stress with 42 items (a three-factor map).
+      Here are its loadings under the conventional default (oblimin) and under leximax, with
+      each factor column headed by the name the lexicon retrieves for it. Hover a row for
+      the item text.</p>
+      <div class="heatmaps" id="dass-heatmaps"></div>
+      <div class="scale-legend" id="dass-legend"></div>
+      <div class="callout">
+        <p id="dass-callout"><strong>Reorienting the axes cannot change what the items say.</strong>
+        The same three names appear under both orientations — and the factor the manual calls
+        “Stress” reads as <em>irritability</em> either way. That disagreement is a fact about the
+        scale's items, not an artifact of axis orientation. Rotation-invariant naming turns into
+        a diagnostic: it tells you what your scale actually measures.</p>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="panel-big5" role="tabpanel" aria-labelledby="tab-big5">
+      <p>Two very different Big Five solutions: one from <strong>human responses</strong>
+      (N = 874,434 people answering the items) and one <strong>response-free semantic</strong>
+      solution (built from the items' text alone, no people at all). How well do their five
+      factors line up? Each cell is the congruence |φ| between a human factor (rows) and a
+      semantic factor (columns) — the diagonal is the matched pairs.</p>
+      <div class="toggle-row" id="big5-toggle"></div>
+      <p class="meanphi">mean best-match |φ| on the diagonal: <b id="big5-mean">—</b></p>
+      <div class="heatmap-card" style="max-width: 640px;">
+        <table class="heat big" id="big5-table"></table>
+      </div>
+      <div class="scale-legend" id="big5-legend"></div>
+      <div class="callout" style="border-left-color: var(--m-leximax)">
+        <p><strong>The lexicon acts as a shared coordinate system.</strong> Rotating both
+        solutions with leximax — toward the same 369,703-word vocabulary — brings a
+        human-response structure and a purely semantic one into near-perfect agreement.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ S5 — SCOREBOARD -->
+<section id="s5">
+  <div class="wrap">
+    <h2>Scoreboard — the honest summary</h2>
+    <p>Across the benchmark scales, here is what changing the criterion from oblimin (the
+    convention) to leximax actually does. Higher is better for both columns; arrows mark the
+    direction of change.</p>
+    <div class="scorewrap">
+      <table class="score" id="score-table"></table>
+    </div>
+    <ul class="bullets" id="s5-bullets"></ul>
+    <div class="notes" id="s5-notes"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><strong>A note on the name:</strong> “leximax” here is <em>lexi-</em> (words) +
+    <em>-max</em> (maximize nameability). It is unrelated to the leximax ordering used in
+    social-choice theory.</p>
+    <p id="citation">Citation: <em>[manuscript in preparation — placeholder]</em>.</p>
+  </div>
+</footer>
+
+</div><!-- /app -->
+
+<div id="tooltip" role="tooltip"></div>
+
+<script>
+'use strict';
+/* ================================================================
+   Which way should the axes point? — all logic, vanilla JS + SVG.
+
+   Everything numeric shown on the page is either read directly
+   from website_data.json or computed from it with the formulas
+   below. Nothing is invented in this file.
+   ================================================================ */
+
+/* ---------------- tiny DOM + math helpers ---------------- */
+const $  = s => document.querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs = {}, parent = null) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function el(tag, attrs = {}, parent = null) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'text') n.textContent = v; else n.setAttribute(k, v);
+  }
+  if (parent) parent.appendChild(n);
+  return n;
+}
+const DEG = Math.PI / 180;
+const f2 = x => x.toFixed(2);
+const f3 = x => x.toFixed(3);
+/* adaptive: criteria span orders of magnitude near-singular */
+const fAdapt = x => Math.abs(x) >= 1000 ? x.toFixed(0)
+              : Math.abs(x) >= 10 ? x.toFixed(1) : x.toFixed(3);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+/* angles are mod 180: an axis and its negation are the same axis */
+const norm180 = a => ((a % 180) + 180) % 180;
+/* shortest signed distance between two axis angles (mod 180) */
+const angDiff = (a, b) => ((b - a + 90) % 180 + 180) % 180 - 90;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)');
+const DARKMQ  = matchMedia('(prefers-color-scheme: dark)');
+
+/* unit axis vector from an angle in degrees */
+const unitVec = deg => [Math.cos(deg * DEG), Math.sin(deg * DEG)];
+
+/* Loadings L = A0 · (T⁻¹)ᵀ for 2 factors, in closed form.
+   T = [u1 u2] with u_i = [cos t_i, sin t_i]; det T = sin(t2 − t1). */
+function loadingsAt(A0, t1, t2) {
+  const c1 = Math.cos(t1 * DEG), s1 = Math.sin(t1 * DEG);
+  const c2 = Math.cos(t2 * DEG), s2 = Math.sin(t2 * DEG);
+  const det = c1 * s2 - s1 * c2;             // = sin(t2 − t1)
+  const L = new Array(A0.length);
+  for (let i = 0; i < A0.length; i++) {
+    const [a, b] = A0[i];
+    L[i] = [(a * s2 - b * c2) / det, (-a * s1 + b * c1) / det];
+  }
+  return L;
+}
+/* factor correlation: off-diagonal of Φ = TᵀT = cos(t2 − t1) */
+const phiAt = (t1, t2) => Math.cos((t2 - t1) * DEG);
+/* An axis and its negation are the same axis, but the SIGNS of the loadings
+   and of the factor correlation depend on which pole is called positive.
+   For display we point each axis at its dominant pole — the side where the
+   loading mass sits (sign of Σ loading³) — which reproduces the official
+   solutions' sign convention. Criteria and model fit are pole-invariant. */
+function polesOf(L) {
+  return [0, 1].map(k => {
+    let t = 0; for (const r of L) t += r[k] ** 3;
+    return t < 0 ? -1 : 1;
+  });
+}
+/* validity: reject nearly collinear axes, |sin(angle between)| < 0.1 */
+const isValid = (t1, t2) => Math.abs(Math.sin((t2 - t1) * DEG)) >= 0.1;
+
+/* varimax criterion (maximize): Σ over columns of var(squared loadings) */
+function critVarimax(L) {
+  const n = L.length; let total = 0;
+  for (let f = 0; f < 2; f++) {
+    let m = 0; for (let i = 0; i < n; i++) m += L[i][f] ** 2;
+    m /= n;
+    let v = 0; for (let i = 0; i < n; i++) v += (L[i][f] ** 2 - m) ** 2;
+    total += v / n;
+  }
+  return total;
+}
+/* quartimin criterion (minimize): Σᵢ L²ᵢ₁ · L²ᵢ₂ */
+function critQuartimin(L) {
+  let s = 0;
+  for (let i = 0; i < L.length; i++) s += (L[i][0] ** 2) * (L[i][1] ** 2);
+  return s;
+}
+/* geomin criterion (minimize): Σᵢ √((L²ᵢ₁+.01)(L²ᵢ₂+.01)) */
+function critGeomin(L) {
+  let s = 0;
+  for (let i = 0; i < L.length; i++)
+    s += Math.sqrt((L[i][0] ** 2 + 0.01) * (L[i][1] ** 2 + 0.01));
+  return s;
+}
+/* target criterion (minimize): Σ (L − B)², B from documented constructs */
+function critTarget(L, B) {
+  let s = 0;
+  for (let i = 0; i < L.length; i++)
+    for (let f = 0; f < 2; f++) s += (L[i][f] - B[i][f]) ** 2;
+  return s;
+}
+/* model-implied covariation Σ = L·Φ·Lᵀ (a rotation invariant).
+   With Φ = [[1,p],[p,1]]: Σᵢⱼ = Lᵢ·Lⱼ + p(Lᵢ₀Lⱼ₁ + Lᵢ₁Lⱼ₀). */
+function fitSigma(L, p) {
+  const n = L.length, S = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    S[i * n + j] = L[i][0] * L[j][0] + L[i][1] * L[j][1]
+                 + p * (L[i][0] * L[j][1] + L[i][1] * L[j][0]);
+  }
+  return S;
+}
+function maxAbsDiff(A, B) {
+  let m = 0;
+  for (let i = 0; i < A.length; i++) m = Math.max(m, Math.abs(A[i] - B[i]));
+  return m;
+}
+
+/* easing for all axis animations */
+const easeInOut = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+
+/* luminance-aware ink for text sitting on a colored cell */
+function inkOn(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255,
+        g = parseInt(hex.slice(3, 5), 16) / 255,
+        b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lin = c => c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+  const Y = .2126 * lin(r) + .7152 * lin(g) + .0722 * lin(b);
+  return Y > .4 ? '#0b0b0b' : '#ffffff';
+}
+/* linear interpolation between hex colors through a list of stops */
+function rampColor(stops, t) {
+  t = clamp(t, 0, 1);
+  const seg = t * (stops.length - 1), i = Math.min(Math.floor(seg), stops.length - 2);
+  const f = seg - i;
+  const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const [r1, g1, b1] = hex(stops[i]), [r2, g2, b2] = hex(stops[i + 1]);
+  const c = v => Math.round(v).toString(16).padStart(2, '0');
+  return '#' + c(r1 + (r2 - r1) * f) + c(g1 + (g2 - g1) * f) + c(b1 + (b2 - b1) * f);
+}
+/* diverging (blue ← neutral → red) and sequential (blue) ramps,
+   selected per color scheme so cells sit well on the surface */
+function ramps() {
+  const dark = DARKMQ.matches;
+  return {
+    // pole order: strong negative … neutral … strong positive
+    div: dark
+      ? ['#6da7ec', '#3d648f', '#383835', '#8f4a49', '#e66767']
+      : ['#104281', '#2a78d6', '#9ec5f4', '#f0efec', '#f2b8b8', '#e34948', '#8f1f1f'],
+    seq: dark
+      ? ['#26374d', '#1c5cab', '#3987e5', '#86b6ef', '#cde2fb']
+      : ['#f0f5fc', '#cde2fb', '#86b6ef', '#3987e5', '#1c5cab', '#0d366b'],
+  };
+}
+/* method metadata: accent CSS var + display name (fixed everywhere) */
+const METHODS = {
+  varimax: { css: 'var(--m-varimax)', name: 'Varimax' },
+  oblimin: { css: 'var(--m-oblimin)', name: 'Oblimin' },
+  geominQ: { css: 'var(--m-geomin)',  name: 'GeominQ' },
+  target:  { css: 'var(--m-target)',  name: 'Target' },
+  leximax: { css: 'var(--m-leximax)', name: 'Leximax' },
+};
+
+/* ---------------- shared tooltip ---------------- */
+const tooltip = $('#tooltip');
+function tipRow(strongText, subText, mutedText) {
+  /* build tooltip content safely: item text etc. inserted via textContent */
+  tooltip.textContent = '';
+  const v = el('div', { class: 'tt-val' }, tooltip);  v.textContent = strongText;
+  if (subText)   { const s = el('div', { class: 'tt-sub' }, tooltip);   s.textContent = subText; }
+  if (mutedText) { const m = el('div', { class: 'tt-muted' }, tooltip); m.textContent = mutedText; }
+  tooltip.style.display = 'block';
+}
+function positionTip(x, y) {
+  const pad = 14, r = tooltip.getBoundingClientRect();
+  let left = x + pad, top = y + pad;
+  if (left + r.width  > innerWidth  - 8) left = x - r.width  - pad;
+  if (top  + r.height > innerHeight - 8) top  = y - r.height - pad;
+  tooltip.style.left = Math.max(4, left) + 'px';
+  tooltip.style.top  = Math.max(4, top)  + 'px';
+}
+function hideTip() { tooltip.style.display = 'none'; }
+
+/* ================================================================
+   BOOT — load the data, then build every section
+   ================================================================ */
+fetch('website_data.json')
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    $('#app').classList.remove('app-hidden');
+    initHook(data.ptq431);
+    const playground = initPlayground(data.ptq431);
+    initGallery(data.ptq431, playground);
+    initCases(data.dass, data.big5_human_semantic);
+    initScoreboard(data.results_summary);
+    initNavSpy();
+    DARKMQ.addEventListener('change', () => initCases(data.dass, data.big5_human_semantic));
+  })
+  .catch(err => {
+    console.error('Could not load website_data.json:', err);
+    $('#data-missing').classList.add('show');
+  });
+
+/* ================================================================
+   Shared drawing: a point cloud + two axes inside an SVG.
+   Coordinates: data space, y flipped so "up" is positive.
+   ================================================================ */
+function drawCloud(svg, A0, opts = {}) {
+  const r = opts.extent || 1.05;                       // plot half-range
+  svg.setAttribute('viewBox', `${-r * 1.1} ${-r * 1.1} ${r * 2.2} ${r * 2.2}`);
+  const g = svgEl('g', { transform: 'scale(1,-1)' }, svg);  // y up
+
+  // strokes stay a fixed pixel width no matter the viewBox scale
+  const NSS = 'non-scaling-stroke';
+
+  // recessive reference circle where the handles ride
+  svgEl('circle', { cx: 0, cy: 0, r: r, fill: 'none', stroke: 'var(--grid)',
+    'stroke-width': 1, 'vector-effect': NSS }, g);
+
+  // axis lines (drawn first so points sit on top)
+  const axes = [1, 2].map(k =>
+    svgEl('line', { class: `axis-line a${k}`, x1: 0, y1: 0, x2: 0, y2: 0,
+      'vector-effect': NSS, 'stroke-linecap': 'round' }, g));
+
+  // item points
+  const ptR = opts.pointR || r / 32;
+  const pts = A0.map(([x, y], i) => {
+    const shapeB = opts.shapes && opts.shapes[i];      // second construct → open square-ish
+    if (shapeB) {
+      const s = ptR * 1.9;
+      return svgEl('rect', { class: 'pt open', x: x - s / 2, y: y - s / 2, width: s, height: s,
+        rx: s / 4, 'stroke-width': 1.5, 'vector-effect': NSS }, g);
+    }
+    return svgEl('circle', { class: 'pt', cx: x, cy: y, r: ptR }, g);
+  });
+
+  function setAxes(t1, t2) {
+    [t1, t2].forEach((t, k) => {
+      const [c, s] = unitVec(t);
+      axes[k].setAttribute('x1', -c * r); axes[k].setAttribute('y1', -s * r);
+      axes[k].setAttribute('x2',  c * r); axes[k].setAttribute('y2',  s * r);
+    });
+  }
+  return { g, axes, pts, setAxes, r };
+}
+
+/* ================================================================
+   S1 — HOOK: slowly spinning orthogonal axes + mini loadings table
+   ================================================================ */
+function initHook(pg) {
+  const svg = $('#hook-svg');
+  const extent = Math.max(...pg.A0.flat().map(Math.abs)) * 1.12;
+  const cloud = drawCloud(svg, pg.A0, { extent });
+
+  // a small, fixed selection of items for the updating table
+  const rows = [];
+  const step = Math.max(1, Math.floor(pg.items.length / 6));
+  const tbody = $('#hook-tbody');
+  for (let i = 0; i < pg.items.length && rows.length < 6; i += step) {
+    const tr = el('tr', {}, tbody);
+    el('td', { text: pg.items[i].code }, tr);
+    rows.push({ i, c1: el('td', {}, tr), c2: el('td', {}, tr) });
+  }
+
+  let angle = 20;
+  function paint(a) {
+    const t1 = norm180(a), t2 = norm180(a + 90);        // orthogonal pair, spinning
+    cloud.setAxes(t1, t2);
+    const L = loadingsAt(pg.A0, t1, t2);
+    const pole = polesOf(L);
+    rows.forEach(r => { r.c1.textContent = f2(pole[0] * L[r.i][0]); r.c2.textContent = f2(pole[1] * L[r.i][1]); });
+  }
+  paint(angle);
+  if (REDUCED.matches) return;                          // static under reduced motion
+  let last = 0;
+  (function tick(ts) {
+    if (ts - last > 90) { angle += 0.9; paint(angle); last = ts; }
+    requestAnimationFrame(tick);
+  })(0);
+}
+
+/* ================================================================
+   S2 — THE PLAYGROUND
+   ================================================================ */
+function initPlayground(pg) {
+  const A0 = pg.A0, items = pg.items, n = items.length;
+  const constructs = [...new Set(items.map(it => it.construct))];
+  $('#scatter-legend').textContent =
+    `● ${constructs[0]}   ▢ ${constructs[1] || ''}  — the items' documented groups. ` +
+    `Drag a handle to rotate its axis (axes may be oblique).`;
+
+  /* --- target matrix from the documented item groupings (for S3) --- */
+  const B = items.map(it => constructs.map(c => it.construct === c ? 1 : 0).slice(0, 2));
+
+  /* --- name grid lookup (labels categorical → nearest cell; crit
+         bilinearly interpolated when the 4 surrounding cells exist) --- */
+  const grid = pg.name_grid, gstep = grid.step_deg, gn = grid.angles_deg.length;
+  const gcell = a => Math.round(norm180(a) / gstep) % gn;
+  function gridLookup(t1, t2) {
+    const e = grid.entries[gcell(t1)][gcell(t2)];
+    if (!e) return null;
+    const out = { labels: [grid.grid_labels[e[0]], grid.grid_labels[e[1]]], crit: e[2] };
+    // bilinear interpolation of crit between the 4 neighbours, when all exist
+    const i0 = Math.floor(norm180(t1) / gstep) % gn, j0 = Math.floor(norm180(t2) / gstep) % gn;
+    const i1 = (i0 + 1) % gn, j1 = (j0 + 1) % gn;
+    const q = [grid.entries[i0][j0], grid.entries[i1][j0], grid.entries[i0][j1], grid.entries[i1][j1]];
+    if (q.every(c => c)) {
+      const fx = norm180(t1) / gstep - Math.floor(norm180(t1) / gstep);
+      const fy = norm180(t2) / gstep - Math.floor(norm180(t2) / gstep);
+      out.crit = q[0][2] * (1 - fx) * (1 - fy) + q[1][2] * fx * (1 - fy)
+               + q[2][2] * (1 - fx) * fy + q[3][2] * fx * fy;
+    }
+    return out;
+  }
+
+  /* --- criterion ranges over all valid grid orientations (meter scales).
+         Near-singular orientations inflate the loading-based criteria
+         enormously, so meters use robust 2nd–98th percentile bounds and
+         clamp beyond them. --- */
+  const sweep = { varimax: [], quartimin: [], geomin: [], target: [], nameability: [] };
+  let maxAbsLoad = 1;
+  for (let i = 0; i < gn; i++) for (let j = 0; j < gn; j++) {
+    const a1 = grid.angles_deg[i], a2 = grid.angles_deg[j];
+    if (!isValid(a1, a2)) continue;
+    const L = loadingsAt(A0, a1, a2);
+    sweep.varimax.push(critVarimax(L)); sweep.quartimin.push(critQuartimin(L));
+    sweep.geomin.push(critGeomin(L));   sweep.target.push(critTarget(L, B));
+    const e = grid.entries[i][j]; if (e) sweep.nameability.push(e[2]);
+    for (const row of L) maxAbsLoad = Math.max(maxAbsLoad, Math.abs(row[0]), Math.abs(row[1]));
+  }
+  const dist = {};
+  for (const k of Object.keys(sweep)) dist[k] = sweep[k].sort((a, b) => a - b);
+  /* Meter fill = percentile rank of the value among all grid orientations —
+     robust to the huge near-singular tails, and it reads as "where does this
+     orientation stand among every possible one". Nameability is a bounded
+     mean cosine, so it keeps a plain linear min–max scale. */
+  function meterPos(key, v) {
+    const s = dist[key];
+    if (!s.length) return 0;
+    if (key === 'nameability') return (v - s[0]) / (s[s.length - 1] - s[0] || 1);
+    let lo = 0, hi = s.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (s[m] < v) lo = m + 1; else hi = m; }
+    return lo / s.length;
+  }
+  maxAbsLoad = Math.min(maxAbsLoad, 1.6);              // bars clamp near-singular extremes
+
+  /* --- reference fit matrix (computed ONCE at the oblimin solution) --- */
+  const obl = pg.solutions.oblimin;
+  const sigmaRef = fitSigma(obl.loadings, obl.Phi[0][1]);
+
+  /* --- scatter with draggable handles --- */
+  const svg = $('#scatter');
+  const extent = Math.max(...A0.flat().map(Math.abs)) * 1.12;
+  const shapes = items.map(it => it.construct === constructs[1]);
+  const cloud = drawCloud(svg, A0, { extent, shapes });
+  const R = cloud.r;
+
+  // parallelogram projection guides, shown while hovering an item
+  const projG = svgEl('g', { visibility: 'hidden' }, cloud.g);
+  const proj1 = svgEl('line', { class: 'proj', stroke: 'var(--axis1)', 'vector-effect': 'non-scaling-stroke' }, projG);
+  const proj2 = svgEl('line', { class: 'proj', stroke: 'var(--axis2)', 'vector-effect': 'non-scaling-stroke' }, projG);
+
+  // draggable handles: a knob at each end of each axis, keyboard-focusable
+  const handles = [];
+  [1, 2].forEach(k => {
+    const grp = svgEl('g', { class: 'axis-handle', tabindex: 0, role: 'slider',
+      'aria-label': `Axis ${k} angle`, 'aria-valuemin': 0, 'aria-valuemax': 179,
+      'aria-valuenow': 0 }, cloud.g);
+    const mk = sign => {
+      const halo = svgEl('circle', { class: 'halo', r: R / 9, fill: 'transparent',
+        stroke: 'none', 'vector-effect': 'non-scaling-stroke' }, grp);
+      const knob = svgEl('circle', { class: 'knob', r: R / 22,
+        fill: `var(--axis${k})`, stroke: 'var(--page)',
+        'vector-effect': 'non-scaling-stroke' }, grp);
+      return { halo, knob, sign };
+    };
+    handles.push({ grp, ends: [mk(1), mk(-1)], k });
+  });
+
+  /* --- state --- */
+  const state = { t: [obl.axis_angles_deg[0], obl.axis_angles_deg[1]], anim: null };
+
+  /* --- right-column widgets --- */
+  // criterion meters (color = the method whose criterion it is)
+  const meterDefs = [
+    { key: 'varimax',     lbl: 'varimax',     col: 'var(--m-varimax)', dir: '↑ maximize',
+      tip: 'Fill = percentile of this value among all axis orientations' },
+    { key: 'quartimin',   lbl: 'quartimin',   col: 'var(--m-oblimin)', dir: '↓ minimize',
+      tip: 'Fill = percentile of this value among all axis orientations' },
+    { key: 'geomin',      lbl: 'geomin',      col: 'var(--m-geomin)',  dir: '↓ minimize',
+      tip: 'Fill = percentile of this value among all axis orientations' },
+    { key: 'nameability', lbl: 'nameability', col: 'var(--m-leximax)', dir: '↑ maximize',
+      tip: 'Precomputed on the full 369,703-word lexicon (3° grid); fill spans the range over all orientations. Raw nameability varies little across orientations and only means something against a chance baseline (see the Scoreboard) — leximax seeks a stable fixed point of the name → rotate loop, not this raw maximum.' },
+  ];
+  const meters = {};
+  for (const d of meterDefs) {
+    const m = el('div', { class: 'meter' }, $('#meters'));
+    const lbl = el('span', { class: 'lbl' }, m);
+    el('span', { class: 'dot', style: `background:${d.col}` }, lbl);
+    lbl.append(d.lbl);
+    const track = el('div', { class: 'track', title: d.tip }, m);
+    const fill = el('div', { class: 'fill', style: `background:${d.col}` }, track);
+    const right = el('span', { class: 'val' }, m);
+    const val = el('span', {}, right); el('div', { class: 'dir', text: d.dir }, right);
+    meters[d.key] = { fill, val };
+  }
+  function setMeter(key, v) {
+    const m = meters[key];
+    if (v == null || !isFinite(v)) { m.fill.style.width = '0%'; m.val.textContent = '—'; return; }
+    m.fill.style.width = (clamp(meterPos(key, v), 0, 1) * 100).toFixed(1) + '%';
+    m.val.textContent = fAdapt(v);
+  }
+
+  /* loading bar chart: one row per item, two mirrored bar columns.
+     Sign is encoded by position around each column's zero line;
+     color is the axis identity. */
+  const bars = $('#bars-svg');
+  const ROWH = 9, LABW = 34, COLW = 120, GAP = 14;
+  const W = LABW + COLW * 2 + GAP * 2, H = 14 + n * ROWH + 4;
+  bars.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const colX = f => LABW + GAP / 2 + f * (COLW + GAP);   // left edge of column f
+  const zeroX = f => colX(f) + COLW / 2;
+  svgEl('text', { class: 'colhead', x: zeroX(0), y: 9, 'text-anchor': 'middle' }, bars).textContent = 'axis 1';
+  svgEl('text', { class: 'colhead', x: zeroX(1), y: 9, 'text-anchor': 'middle' }, bars).textContent = 'axis 2';
+  [0, 1].forEach(f => svgEl('line', { class: 'zero', x1: zeroX(f), y1: 12, x2: zeroX(f), y2: H - 3 }, bars));
+  const rowEls = items.map((it, i) => {
+    const y = 13 + i * ROWH;
+    const band = svgEl('rect', { class: 'rowband', x: 0, y, width: W, height: ROWH }, bars);
+    const t = svgEl('text', { x: LABW - 3, y: y + ROWH - 2.5, 'text-anchor': 'end' }, bars);
+    t.textContent = it.code;
+    const b1 = svgEl('rect', { class: 'bar a1', y: y + 1.4, height: ROWH - 2.8, rx: 1.2 }, bars);
+    const b2 = svgEl('rect', { class: 'bar a2', y: y + 1.4, height: ROWH - 2.8, rx: 1.2 }, bars);
+    // transparent hit row for the tooltip (mark hit-target > mark)
+    const hit = svgEl('rect', { x: 0, y, width: W, height: ROWH, fill: 'transparent' }, bars);
+    hit.addEventListener('pointermove', e => { itemTip(i, e.clientX, e.clientY); highlight(i, true); });
+    hit.addEventListener('pointerleave', () => { hideTip(); highlight(i, false); });
+    return { band, b1, b2 };
+  });
+  function setBar(rect, f, v) {
+    const w = clamp(Math.abs(v) / maxAbsLoad, 0, 1) * (COLW / 2);
+    rect.setAttribute('width', w);
+    rect.setAttribute('x', v >= 0 ? zeroX(f) : zeroX(f) - w);
+  }
+
+  /* cross-highlighting between scatter points and bar rows */
+  function highlight(i, on) {
+    cloud.pts[i].classList.toggle('hl', on);
+    rowEls[i].band.classList.toggle('hl', on);
+    if (on) {
+      // parallelogram coordinates: item = l1·u1 + l2·u2
+      const L = loadingsAt(A0, state.t[0], state.t[1]);
+      const [u1x, u1y] = unitVec(state.t[0]), [u2x, u2y] = unitVec(state.t[1]);
+      const [x, y] = A0[i], l1 = L[i][0], l2 = L[i][1];
+      proj1.setAttribute('x1', x); proj1.setAttribute('y1', y);
+      proj1.setAttribute('x2', l1 * u1x); proj1.setAttribute('y2', l1 * u1y);
+      proj2.setAttribute('x1', x); proj2.setAttribute('y1', y);
+      proj2.setAttribute('x2', l2 * u2x); proj2.setAttribute('y2', l2 * u2y);
+      projG.setAttribute('visibility', 'visible');
+    } else projG.setAttribute('visibility', 'hidden');
+  }
+  function itemTip(i, cx, cy) {
+    const L = loadingsAt(A0, state.t[0], state.t[1]);
+    const pole = polesOf(L);
+    tipRow(items[i].text,
+      `documented group: ${items[i].construct}`,
+      isValid(state.t[0], state.t[1])
+        ? `loadings now — axis 1: ${f2(pole[0] * L[i][0])}, axis 2: ${f2(pole[1] * L[i][1])}`
+        : 'loadings paused (axes nearly collinear)');
+    positionTip(cx, cy);
+  }
+  cloud.pts.forEach((p, i) => {
+    // enlarge the hit area well beyond the mark
+    p.style.pointerEvents = 'none';
+    const [x, y] = A0[i];
+    const hit = svgEl('circle', { cx: x, cy: y, r: R / 10, fill: 'transparent' }, cloud.g);
+    hit.style.cursor = 'help';
+    hit.addEventListener('pointermove', e => { itemTip(i, e.clientX, e.clientY); highlight(i, true); });
+    hit.addEventListener('pointerleave', () => { hideTip(); highlight(i, false); });
+  });
+
+  /* --- snap buttons --- */
+  const snapRow = $('#snap-row');
+  const solOrder = ['varimax', 'oblimin', 'geominQ', 'leximax'];
+  for (const key of solOrder) {
+    if (!pg.solutions[key]) continue;
+    const b = el('button', { class: 'snap', style: `--mcol:${METHODS[key].css}` }, snapRow);
+    el('span', { class: 'dot' }, b);
+    b.append(METHODS[key].name);
+    b.addEventListener('click', () => animateTo(pg.solutions[key].axis_angles_deg, 400));
+  }
+
+  /* --- run leximax: replay the alternation path --- */
+  const runBtn = $('#run-leximax'), log = $('#lexi-log'), badgeSlot = $('#converged-slot');
+  runBtn.addEventListener('click', async () => {
+    runBtn.disabled = true; badgeSlot.textContent = '';
+    log.classList.add('show'); log.textContent = '';
+    const path = pg.leximax_path;
+    // start from the oblimin orientation (the alternation's starting point)
+    await animateTo(pg.solutions.oblimin.axis_angles_deg, 400);
+    for (let i = 0; i < path.length; i++) {
+      const step = path[i];
+      await animateTo(step.axis_angles_deg, 400);
+      setChips(step.labels, true);                      // retrieval step: names update
+      log.textContent += `iteration ${i}: [${step.labels[0]}, ${step.labels[1]}], nameability = ${f3(step.crit)}\n`;
+      log.scrollTop = log.scrollHeight;
+      await wait(REDUCED.matches ? 60 : 460);
+    }
+    const badge = el('span', { class: 'badge-converged', text: '✓ converged' }, badgeSlot);
+    badge.title = 'The retrieved names stopped changing — a fixed point of the name → rotate → name loop.';
+    runBtn.disabled = false;
+  });
+  const wait = ms => new Promise(res => setTimeout(res, ms));
+
+  /* --- name chips --- */
+  const chipEls = [$('#name1'), $('#name2')];
+  let lastNames = ['', ''];
+  function setChips(labels, forceFlash) {
+    chipEls.forEach((c, k) => {
+      const txt = labels ? labels[k] : '—';
+      if (txt !== lastNames[k] || forceFlash) {
+        c.textContent = txt;
+        c.classList.toggle('none', !labels);
+        c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+        lastNames[k] = txt;
+      }
+    });
+  }
+
+  /* --- the one render function: everything updates from the angles --- */
+  const rightCol = document.querySelector('.play-grid > div:last-child');
+  function render() {
+    const [t1, t2] = state.t;
+    cloud.setAxes(t1, t2);
+    handles.forEach(h => {
+      const t = state.t[h.k - 1], [c, s] = unitVec(t);
+      h.ends.forEach(e => {
+        [e.halo, e.knob].forEach(cir => {
+          cir.setAttribute('cx', e.sign * c * R); cir.setAttribute('cy', e.sign * s * R);
+        });
+      });
+      h.grp.setAttribute('aria-valuenow', Math.round(norm180(t)));
+      h.grp.setAttribute('aria-valuetext', Math.round(norm180(t)) + ' degrees');
+    });
+    $('#ang1').textContent = Math.round(norm180(t1)) + '°';
+    $('#ang2').textContent = Math.round(norm180(t2)) + '°';
+
+    const valid = isValid(t1, t2);
+    $('#warn-singular').classList.toggle('show', !valid);
+    rightCol.classList.toggle('degrade', !valid);
+    if (!valid) { setChips(null); return; }
+
+    const L = loadingsAt(A0, t1, t2);
+    const pole = polesOf(L);                 // display-pole per axis
+    // loading bars (dominant-pole signs)
+    rowEls.forEach((r, i) => { setBar(r.b1, 0, pole[0] * L[i][0]); setBar(r.b2, 1, pole[1] * L[i][1]); });
+    // criterion meters (pole-invariant, computed from raw L)
+    setMeter('varimax', critVarimax(L));
+    setMeter('quartimin', critQuartimin(L));
+    setMeter('geomin', critGeomin(L));
+    // factor correlation under the display poles
+    const pRaw = phiAt(t1, t2), p = pole[0] * pole[1] * pRaw;
+    $('#phi-readout').textContent = 'φ = ' + (p < 0 ? '−' : '') + f2(Math.abs(p)).replace('0.', '.');
+    // fit invariance: recompute L·Φ·Lᵀ and compare to the oblimin reference
+    // (raw L pairs with raw φ — the invariant doesn't depend on poles)
+    const d = maxAbsDiff(fitSigma(L, pRaw), sigmaRef);
+    $('#fit-detail').textContent = `identical under all rotations (max |Δ| = ${d.toExponential(1)})`;
+    // retrieved names + nameability from the precomputed grid
+    const gl = gridLookup(t1, t2);
+    setChips(gl ? gl.labels : null);
+    setMeter('nameability', gl ? gl.crit : null);
+  }
+
+  /* --- dragging --- */
+  handles.forEach(h => {
+    h.grp.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      h.grp.setPointerCapture(e.pointerId);
+      const move = ev => {
+        const pt = svgPoint(svg, ev.clientX, ev.clientY);
+        // y is flipped in the drawing group
+        state.t[h.k - 1] = norm180(Math.atan2(-pt.y, pt.x) / DEG);
+        cancelAnim(); render();
+      };
+      const up = () => {
+        h.grp.removeEventListener('pointermove', move);
+        h.grp.removeEventListener('pointerup', up);
+      };
+      h.grp.addEventListener('pointermove', move);
+      h.grp.addEventListener('pointerup', up);
+    });
+    // keyboard: arrows nudge 1°
+    h.grp.addEventListener('keydown', e => {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      state.t[h.k - 1] = norm180(state.t[h.k - 1] + d);
+      cancelAnim(); render();
+    });
+  });
+  function svgPoint(svgEl_, x, y) {
+    const p = svgEl_.createSVGPoint(); p.x = x; p.y = y;
+    return p.matrixTransform(svgEl_.getScreenCTM().inverse());
+  }
+
+  /* --- animation to a pair of angles (shortest path mod 180) --- */
+  function cancelAnim() { if (state.anim) { cancelAnimationFrame(state.anim.raf); state.anim.resolve(); state.anim = null; } }
+  function animateTo(target, ms) {
+    cancelAnim();
+    if (REDUCED.matches) { state.t = [norm180(target[0]), norm180(target[1])]; render(); return Promise.resolve(); }
+    const from = [...state.t];
+    const delta = [angDiff(from[0], target[0]), angDiff(from[1], target[1])];
+    return new Promise(resolve => {
+      const t0 = performance.now();
+      state.anim = { resolve, raf: 0 };
+      const step = now => {
+        const u = clamp((now - t0) / ms, 0, 1), e = easeInOut(u);
+        state.t = [norm180(from[0] + delta[0] * e), norm180(from[1] + delta[1] * e)];
+        render();
+        if (u < 1 && state.anim) state.anim.raf = requestAnimationFrame(step);
+        else { state.anim = null; resolve(); }
+      };
+      state.anim.raf = requestAnimationFrame(step);
+    });
+  }
+
+  render();
+  // expose what the gallery needs
+  return { A0, B, items, constructs, meterPos, gridLookup, extent, shapes,
+           solutions: pg.solutions, leximax_path: pg.leximax_path };
+}
+
+/* ================================================================
+   S3 — METHOD GALLERY
+   ================================================================ */
+function initGallery(pg, P) {
+  const cardsEl = $('#cards');
+
+  /* the target "solution": grid-search the two angles that minimize the
+     target criterion toward the documented item groupings (1° steps) */
+  function targetSolution() {
+    let best = null;
+    for (let a = 0; a < 180; a += 1) for (let b = 0; b < 180; b += 1) {
+      if (!isValid(a, b)) continue;
+      const v = critTarget(loadingsAt(P.A0, a, b), P.B);
+      if (!best || v < best.v) best = { v, ang: [a, b] };
+    }
+    return best.ang;
+  }
+
+  const defs = [
+    { key: 'varimax',
+      text: `Keep the axes perpendicular and spin them until every item's loadings are pushed
+             toward “big or zero” — each factor gets a crisp defining cluster of items.
+             Because the axes stay at 90°, the factors are forced to be uncorrelated.`,
+      math: `Maximize Σ over factors of var(L²) — the variance of the squared loadings within
+             each column. Orthogonal: Φ is fixed at the identity.`,
+      crit: L => critVarimax(L), dir: 'maximize', rangeKey: 'varimax',
+      angles: () => pg.solutions.varimax.axis_angles_deg },
+    { key: 'oblimin',
+      text: `The same “big or zero” goal, but the axes may tilt toward each other, so factors
+             can correlate — psychology's default. It punishes cross-loadings: items that load
+             on both factors at once.`,
+      math: `Minimize Σᵢ Πf≠g L²ᵢf·L²ᵢg — for two factors, Σᵢ L²ᵢ₁L²ᵢ₂ (the quartimin member
+             of the oblimin family). Oblique: Φ = TᵀT is free.`,
+      crit: L => critQuartimin(L), dir: 'minimize', rangeKey: 'quartimin',
+      angles: () => pg.solutions.oblimin.axis_angles_deg },
+    { key: 'geominQ',
+      text: `Another simple-structure proxy, the default in Mplus: make the geometric mean of
+             each item's squared loadings small, so most items lean on just one factor.`,
+      math: `Minimize Σᵢ (Πf (L²ᵢf + ε))^(1/k) with ε = .01 — here, Σᵢ √((L²ᵢ₁+.01)(L²ᵢ₂+.01)).
+             Oblique.`,
+      crit: L => critGeomin(L), dir: 'minimize', rangeKey: 'geomin',
+      angles: () => pg.solutions.geominQ.axis_angles_deg },
+    { key: 'target',
+      text: `You write down the loading pattern you expect — which items should define which
+             factor — and the axes rotate toward that hand-specified target. Here the target is
+             built from this scale's documented item groupings.`,
+      math: `Minimize Σᵢf (Lᵢf − Bᵢf)², where B is the researcher-supplied target matrix
+             (1 where an item is documented to belong, 0 elsewhere). Oblique.`,
+      crit: L => critTarget(L, P.B), dir: 'minimize', rangeKey: 'target',
+      angles: targetSolution },
+    { key: 'leximax',
+      text: `The words get a vote. Leximax alternates: NAME each axis (average the meaning
+             vectors of its defining items, subtract the questionnaire's average meaning, and
+             retrieve the nearest of 369,703 lexicon terms), then ROTATE toward the loading
+             profile those names imply. Repeat until the names stop changing.`,
+      math: `Criterion (“nameability”, maximize): the mean cosine between each axis's meaning
+             direction and its retrieved term's embedding. The rotate step is an oblique target
+             rotation toward the semantic similarity of every item's text to the retrieved term.
+             Model fit never changes; only the orientation does.`,
+      leximax: true },
+  ];
+
+  for (const d of defs) {
+    const card = el('div', { class: 'card', style: `--mcol:${METHODS[d.key].css}` }, cardsEl);
+    const h = el('h3', {}, card);
+    el('span', { class: 'dot' }, h); h.append(METHODS[d.key].name);
+    el('p', { text: d.text.replace(/\s+/g, ' ') }, card);
+    const det = el('details', { class: 'math' }, card);
+    el('summary', { text: 'the criterion (math)' }, det);
+    el('div', { class: 'body', text: d.math.replace(/\s+/g, ' ') }, det);
+    const mini = el('div', { class: 'mini' }, card);
+    if (d.leximax) buildLeximaxMini(mini);
+    else buildMiniDemo(mini, d);
+  }
+
+  /* mini-demo: cloud auto-rotating from a random start to the method's
+     solution while its criterion meter falls/rises. Loops while visible. */
+  function buildMiniDemo(mini, d) {
+    const svg = svgEl('svg', { viewBox: '0 0 10 10', role: 'img',
+      'aria-label': `${METHODS[d.key].name} pulling the axes to its solution` });
+    mini.appendChild(svg);
+    const cloud = drawCloud(svg, P.A0, { extent: P.extent, shapes: P.shapes, pointR: P.extent / 40 });
+    const meterRow = el('div', { class: 'mini-meter' }, mini);
+    const dirLbl = el('span', { text: d.dir === 'maximize' ? 'criterion ↑' : 'criterion ↓' }, meterRow);
+    const track = el('div', { class: 'track' }, meterRow);
+    const fill = el('div', { class: 'fill' }, track);
+    const valEl = el('span', {}, meterRow);
+    const sol = d.angles();
+
+    let raf = 0, running = false;
+    function randStart() {
+      let a, b;
+      do { a = Math.random() * 180; b = Math.random() * 180; } while (!isValid(a, b));
+      return [a, b];
+    }
+    function playOnce() {
+      return new Promise(res => {
+        const from = randStart();
+        const delta = [angDiff(from[0], sol[0]), angDiff(from[1], sol[1])];
+        const DUR = 1800, t0 = performance.now();
+        const step = now => {
+          const u = clamp((now - t0) / DUR, 0, 1), e = easeInOut(u);
+          const t1 = norm180(from[0] + delta[0] * e), t2 = norm180(from[1] + delta[1] * e);
+          cloud.setAxes(t1, t2);
+          const v = d.crit(loadingsAt(P.A0, t1, t2));
+          fill.style.width = (clamp(P.meterPos(d.rangeKey, v), 0, 1) * 100).toFixed(1) + '%';
+          valEl.textContent = fAdapt(v);
+          if (u < 1 && running) raf = requestAnimationFrame(step); else res();
+        };
+        raf = requestAnimationFrame(step);
+      });
+    }
+    async function loop() {
+      while (running) { await playOnce(); await new Promise(r => setTimeout(r, 1300)); }
+    }
+    function staticFinal() {
+      cloud.setAxes(sol[0], sol[1]);
+      const v = d.crit(loadingsAt(P.A0, sol[0], sol[1]));
+      fill.style.width = (clamp(P.meterPos(d.rangeKey, v), 0, 1) * 100).toFixed(1) + '%';
+      valEl.textContent = fAdapt(v);
+    }
+    if (REDUCED.matches) { staticFinal(); return; }
+    // animate only while on screen
+    new IntersectionObserver(entries => {
+      const vis = entries[0].isIntersecting;
+      if (vis && !running) { running = true; loop(); }
+      if (!vis) { running = false; cancelAnimationFrame(raf); }
+    }, { threshold: .2 }).observe(svg);
+  }
+
+  /* leximax card: the name → rotate → name loop diagram + path replay */
+  function buildLeximaxMini(mini) {
+    const dia = el('div', { class: 'loop-diagram' }, mini);
+    dia.innerHTML =
+      `<svg viewBox="0 0 300 74" role="img" aria-label="Leximax loop: name the axes, rotate toward the names, repeat until the names stop changing">
+        <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L8 4 L0 8 z" fill="var(--m-leximax)"/></marker></defs>
+        <g font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">
+          <rect x="6"   y="20" width="84" height="34" rx="9" fill="none" stroke="var(--m-leximax)" stroke-width="1.6"/>
+          <text x="48"  y="34" fill="var(--ink)" font-weight="700">1 · NAME</text>
+          <text x="48"  y="47" fill="var(--ink-2)" font-size="8">nearest lexicon term</text>
+          <rect x="108" y="20" width="84" height="34" rx="9" fill="none" stroke="var(--m-leximax)" stroke-width="1.6"/>
+          <text x="150" y="34" fill="var(--ink)" font-weight="700">2 · ROTATE</text>
+          <text x="150" y="47" fill="var(--ink-2)" font-size="8">toward the names</text>
+          <rect x="210" y="20" width="84" height="34" rx="9" fill="none" stroke="var(--m-leximax)" stroke-width="1.6"/>
+          <text x="252" y="34" fill="var(--ink)" font-weight="700">3 · REPEAT</text>
+          <text x="252" y="47" fill="var(--ink-2)" font-size="8">until names fixed</text>
+          <line x1="90" y1="37" x2="106" y2="37" stroke="var(--m-leximax)" stroke-width="1.6" marker-end="url(#arr)"/>
+          <line x1="192" y1="37" x2="208" y2="37" stroke="var(--m-leximax)" stroke-width="1.6" marker-end="url(#arr)"/>
+          <path d="M252 20 C 252 4, 48 4, 48 18" fill="none" stroke="var(--m-leximax)" stroke-width="1.6" marker-end="url(#arr)"/>
+        </g>
+      </svg>`;
+    const svg = svgEl('svg', { viewBox: '0 0 10 10', role: 'img',
+      'aria-label': 'Leximax alternation replayed on the playground cloud' });
+    mini.appendChild(svg);
+    const cloud = drawCloud(svg, P.A0, { extent: P.extent, shapes: P.shapes, pointR: P.extent / 40 });
+    const nameLine = el('div', { class: 'mini-name' }, mini);
+    const path = P.leximax_path, start = P.solutions.oblimin.axis_angles_deg;
+
+    function setStep(i) {
+      const s = i < 0 ? { axis_angles_deg: start, labels: null } : path[i];
+      cloud.setAxes(s.axis_angles_deg[0], s.axis_angles_deg[1]);
+      nameLine.textContent = s.labels
+        ? `iter ${i}: [${s.labels[0]}, ${s.labels[1]}] · nameability ${f3(s.crit)}`
+        : 'start: oblimin orientation';
+    }
+    if (REDUCED.matches) { setStep(path.length - 1); return; }
+    let running = false, timer = 0;
+    async function loop() {
+      while (running) {
+        setStep(-1); await pause(900);
+        for (let i = 0; i < path.length && running; i++) {
+          await tween(i === 0 ? start : path[i - 1].axis_angles_deg, path[i].axis_angles_deg);
+          setStep(i); await pause(800);
+        }
+        await pause(1500);
+      }
+    }
+    const pause = ms => new Promise(r => timer = setTimeout(r, ms));
+    function tween(from, to) {
+      return new Promise(res => {
+        const d = [angDiff(from[0], to[0]), angDiff(from[1], to[1])], t0 = performance.now();
+        const step = now => {
+          const u = clamp((now - t0) / 700, 0, 1), e = easeInOut(u);
+          cloud.setAxes(norm180(from[0] + d[0] * e), norm180(from[1] + d[1] * e));
+          if (u < 1 && running) requestAnimationFrame(step); else res();
+        };
+        requestAnimationFrame(step);
+      });
+    }
+    new IntersectionObserver(entries => {
+      const vis = entries[0].isIntersecting;
+      if (vis && !running) { running = true; loop(); }
+      if (!vis) { running = false; clearTimeout(timer); }
+    }, { threshold: .2 }).observe(svg);
+  }
+}
+
+/* ================================================================
+   S4 — CASE STUDIES
+   ================================================================ */
+function initCases(dass, big5) {
+  /* ---- tabs ---- */
+  const tabs = [['tab-dass', 'panel-dass'], ['tab-big5', 'panel-big5']];
+  tabs.forEach(([t, p]) => {
+    $('#' + t).onclick = () => {
+      tabs.forEach(([t2, p2]) => {
+        $('#' + t2).setAttribute('aria-selected', String(t2 === t));
+        $('#' + p2).classList.toggle('show', p2 === p);
+      });
+    };
+  });
+
+  const { div, seq } = ramps();
+
+  /* ---- DASS heatmaps: items × factors, diverging scale ---- */
+  const host = $('#dass-heatmaps');
+  host.textContent = '';
+  const maxAbs = Math.max(...['oblimin', 'leximax'].flatMap(m => dass[m].loadings.flat().map(Math.abs)), 1e-9);
+  for (const m of ['oblimin', 'leximax']) {
+    const sol = dass[m];
+    const card = el('div', { class: 'heatmap-card' }, host);
+    const h = el('h4', {}, card);
+    el('span', { class: 'dot', style: `background:${METHODS[m].css}` }, h);
+    h.append(`${METHODS[m].name} — factors named: `);
+    const nameSpan = el('em', {}, h);
+    nameSpan.textContent = sol.labels.join(' · ');
+    const tbl = el('table', { class: 'heat' }, card);
+    const thr = el('tr', {}, el('thead', {}, tbl));
+    el('th', {}, thr);
+    sol.labels.forEach(lb => { const th = el('th', {}, thr); th.textContent = lb; });
+    const tb = el('tbody', {}, tbl);
+    dass.items.forEach((it, i) => {
+      const tr = el('tr', {}, tb);
+      const rh = el('th', { class: 'rowh' }, tr);
+      rh.textContent = it.code;
+      const tip = e => { tipRow(it.text, `documented construct: ${it.construct}`); positionTip(e.clientX, e.clientY); };
+      tr.addEventListener('pointermove', tip);
+      tr.addEventListener('pointerleave', hideTip);
+      sol.loadings[i].forEach(v => {
+        const td = el('td', {}, tr);
+        const c = rampColor(div, 0.5 + 0.5 * clamp(v / maxAbs, -1, 1));
+        td.style.background = c; td.style.color = inkOn(c);
+        td.textContent = f2(v).replace('0.', '.');
+      });
+    });
+  }
+  // diverging scale legend
+  const lg = $('#dass-legend'); lg.textContent = '';
+  lg.append(`−${f2(maxAbs)}`);
+  el('div', { class: 'ramp',
+    style: `background: linear-gradient(90deg, ${div.map((c, i) => `${c} ${i / (div.length - 1) * 100}%`).join(',')})` }, lg);
+  lg.append(`+${f2(maxAbs)}  loading`);
+
+  /* ---- Big Five congruence matrices with an oblimin ↔ leximax toggle ---- */
+  const tgRow = $('#big5-toggle'); tgRow.textContent = '';
+  let current = 'oblimin';
+  const btns = {};
+  for (const m of ['oblimin', 'leximax']) {
+    const b = el('button', { class: 'tgl', style: `--mc:${METHODS[m].css}` }, tgRow);
+    b.textContent = METHODS[m].name;
+    b.setAttribute('aria-pressed', String(m === current));
+    b.onclick = () => { current = m; paintBig5(); };
+    btns[m] = b;
+  }
+  const tbl = $('#big5-table');
+  function paintBig5() {
+    for (const m of ['oblimin', 'leximax']) btns[m].setAttribute('aria-pressed', String(m === current));
+    const sol = big5[current];
+    $('#big5-mean').textContent = f2(sol.mean_phi).replace('0.', '.');
+    tbl.textContent = '';
+    const thr = el('tr', {}, el('thead', {}, tbl));
+    const corner = el('th', {}, thr); corner.textContent = 'human ↓ · semantic →';
+    corner.style.fontSize = '.62rem'; corner.style.color = 'var(--muted)';
+    sol.semantic_labels.forEach(lb => { const th = el('th', {}, thr); th.textContent = lb; });
+    const tb = el('tbody', {}, tbl);
+    sol.phi_matrix.forEach((row, i) => {
+      const tr = el('tr', {}, tb);
+      const rh = el('th', { class: 'rowh' }, tr);
+      rh.textContent = `${big5.factors_doc[i]} · ${sol.human_labels[i]}`;
+      rh.style.fontFamily = 'inherit';
+      row.forEach((v, j) => {
+        const td = el('td', { class: i === j ? 'diag' : '' }, tr);
+        const c = rampColor(seq, Math.abs(v));
+        td.style.background = c; td.style.color = inkOn(c);
+        td.textContent = f2(Math.abs(v)).replace('0.', '.');
+        td.title = `human ${sol.human_labels[i]} × semantic ${sol.semantic_labels[j]}: |φ| = ${f2(Math.abs(v))}`;
+      });
+    });
+  }
+  paintBig5();
+  const lg2 = $('#big5-legend'); lg2.textContent = '';
+  lg2.append('0');
+  el('div', { class: 'ramp',
+    style: `background: linear-gradient(90deg, ${seq.map((c, i) => `${c} ${i / (seq.length - 1) * 100}%`).join(',')})` }, lg2);
+  lg2.append('1  |φ| congruence · outlined cells = matched pairs');
+}
+
+/* ================================================================
+   S5 — SCOREBOARD
+   ================================================================ */
+function initScoreboard(rs) {
+  const tbl = $('#score-table');
+  const thr = el('tr', {}, el('thead', {}, tbl));
+  ['scale', 'k', 'nameability (oblimin → leximax)', 'structure NMI (oblimin → leximax)']
+    .forEach(t => el('th', { text: t }, thr));
+  const tb = el('tbody', {}, tbl);
+  const arrow = (a, b, eps = 1e-9) => b > a + eps ? ['↑', 'up'] : (b < a - eps ? ['↓', 'down'] : ['→', 'flat']);
+  let nameWins = 0, nmiWins = 0;
+  for (const r of rs.per_scale) {
+    const tr = el('tr', {}, tb);
+    el('td', { text: r.scale }, tr);
+    el('td', { text: String(r.k) }, tr);
+    const [na, ncls] = arrow(r.nameability_oblimin, r.nameability_leximax);
+    const [ma, mcls] = arrow(r.nmi_oblimin, r.nmi_leximax);
+    if (ncls === 'up') nameWins++;
+    if (mcls === 'up') nmiWins++;
+    const td1 = el('td', {}, tr);
+    td1.append(f3(r.nameability_oblimin) + ' → ' + f3(r.nameability_leximax) + ' ');
+    el('span', { class: ncls, text: na }, td1);
+    const td2 = el('td', {}, tr);
+    td2.append(f3(r.nmi_oblimin) + ' → ' + f3(r.nmi_leximax) + ' ');
+    el('span', { class: mcls, text: ma }, td2);
+  }
+  const nScales = rs.per_scale.length;
+
+  /* three plain-language bullets — counts computed from the table itself */
+  const ul = $('#s5-bullets');
+  const li1 = el('li', {}, ul);
+  li1.innerHTML = `<strong>What leximax wins:</strong> it raises nameability on
+    <b>${nameWins}/${nScales}</b> scales, improves agreement with the instrument's documented
+    item groupings (NMI) on <b>${nmiWins}/${nScales}</b>, and aligns human-response and
+    response-free semantic Big Five solutions far better than the convention (see the case study).`;
+  const li2 = el('li', {}, ul);
+  li2.innerHTML = `<strong>What it does not win:</strong> recovering the scales' documented
+    <em>names</em>. Against a frozen alias table, the oblimin default hits
+    <b>${rs.alias_hits.oblimin}</b> versus leximax's <b>${rs.alias_hits.leximax}</b>.
+    Leximax optimizes nameability, not agreement with the manual.`;
+  const li3 = el('li', {}, ul);
+  li3.innerHTML = `<strong>The calibration caveat:</strong> raw nameability only means something
+    against a chance baseline — on most scales, random regroupings of the same items are about
+    as “nameable” as the real structure. See the notes below.`;
+
+  /* verbatim caveats from the data file */
+  const notes = $('#s5-notes');
+  if (rs.notes && rs.notes.length) {
+    el('p', { text: 'Notes from the analysis:' }, notes);
+    const ol = el('ul', {}, notes);
+    rs.notes.forEach(t => el('li', { text: t }, ol));
+  }
+}
+
+/* ================================================================
+   NAV — highlight the section in view
+   ================================================================ */
+function initNavSpy() {
+  const links = [...document.querySelectorAll('#topnav a.navlink')];
+  const secs = links.map(a => $(a.getAttribute('href')));
+  const spy = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+    }
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  secs.forEach(s => s && spy.observe(s));
+}
+</script>
+</body>
+</html>
