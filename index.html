@@ -141,7 +141,10 @@ nav#topnav a.navlink.active { background: var(--chip-bg); color: var(--ink); fon
   box-shadow: var(--shadow); padding: 1rem;
 }
 .hook-fig .caption { font-size: .85rem; color: var(--muted); text-align: center; margin: .5rem 0 0; }
-.hook-grid { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; }
+.hook-grid { display: grid; grid-template-columns: 1fr auto; gap: 1.25rem; align-items: center; }
+/* min-width:0 lets the SVG shrink inside its 1fr track instead of overflowing
+   its box onto the table when the column gets narrow */
+#hook-svg { width: 100%; height: auto; min-width: 0; display: block; }
 @media (max-width: 520px) { .hook-grid { grid-template-columns: 1fr; } }
 table.mini-loadings { border-collapse: collapse; font-size: .78rem; }
 table.mini-loadings th, table.mini-loadings td {
@@ -887,7 +890,9 @@ function drawCloud(svg, A0, opts = {}) {
    ================================================================ */
 function initHook(pg) {
   const svg = $('#hook-svg');
-  const extent = Math.max(...pg.A0.flat().map(Math.abs)) * 1.12;
+  // this cloud is lopsided (correlated factors push every item into one
+  // quadrant), so pad generously to keep the points off the panel edges
+  const extent = Math.max(...pg.A0.flat().map(Math.abs)) * 1.45;
   const cloud = drawCloud(svg, pg.A0, { extent });
 
   // a small, fixed selection of items for the updating table
