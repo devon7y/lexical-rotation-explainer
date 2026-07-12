@@ -342,7 +342,6 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 @media (max-width: 420px) { .name-chips { grid-template-columns: 1fr; } }
 .name-chip {
   border: 2px solid var(--ac); border-radius: 12px; padding: .6rem .8rem; background: var(--surface);
-  min-height: 4.6rem;
 }
 .name-chip .axis-tag { font-size: .72rem; font-weight: 700; letter-spacing: .05em;
   text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: .35rem; }
@@ -350,6 +349,12 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 .name-chip .name { font-size: 1.25rem; font-weight: 700; color: var(--ink); margin-top: .15rem;
   overflow-wrap: anywhere; }
 .name-chip .name.none { color: var(--muted); font-weight: 500; }
+.name-chip .chip-def { font-size: .72rem; color: var(--muted); margin-top: .45rem; line-height: 1.4; }
+.name-chip .chip-def .chip-def-lbl { display: block; text-transform: uppercase; letter-spacing: .05em;
+  font-size: .6rem; margin-bottom: .12rem; }
+.name-chip .chip-def b { color: var(--ink-2); font-weight: 600; font-family: ui-monospace, Menlo, monospace;
+  cursor: help; }
+.chip-why { font-size: .82rem; color: var(--ink-2); margin: .7rem 0 0; }
 @keyframes chipflash { 0% { transform: scale(1.06); } 100% { transform: scale(1); } }
 .name-chip .name.flash { animation: chipflash .25s ease-out; }
 @media (prefers-reduced-motion: reduce) { .name-chip .name.flash { animation: none; } }
@@ -822,12 +827,39 @@ footer p { color: var(--muted); }
             <div class="name-chip" style="--ac: var(--axis1)">
               <div class="axis-tag">Axis 1 · <span id="ang1">0°</span></div>
               <div class="name" id="name1">—</div>
+              <div class="chip-def"><span class="chip-def-lbl">named from its top items</span><span id="def1">—</span></div>
             </div>
             <div class="name-chip" style="--ac: var(--axis2)">
               <div class="axis-tag">Axis 2 · <span id="ang2">90°</span></div>
               <div class="name" id="name2">—</div>
+              <div class="chip-def"><span class="chip-def-lbl">named from its top items</span><span id="def2">—</span></div>
             </div>
           </div>
+          <p class="chip-why">A factor is named from the items that load on it most — the
+          <b style="color:var(--ink-2)">top items</b> shown above. Rotate the axes and different items
+          rise to the top, so the retrieved name changes with them. <em>That</em> is why a different
+          orientation gives a different name.</p>
+          <details class="math">
+            <summary>Where do these names actually come from?</summary>
+            <div class="body">
+              <p style="margin:.2rem 0 .5rem">Point the axis somewhere and a specific handful of items
+              sit at its top (the “top items” above). Leximax turns those into a name automatically, in
+              a frozen, deterministic pipeline:</p>
+              <ol style="margin:.2rem 0 .5rem; padding-left:1.2rem">
+                <li>take the items that define the axis — its dominant pole, weighted by loading;</li>
+                <li>average their <strong>meaning vectors</strong> (each item's text → a point in a
+                language model's meaning-space);</li>
+                <li>subtract the questionnaire's <em>average</em> meaning, so the name reflects what makes
+                <em>this</em> factor distinctive within <em>this</em> survey;</li>
+                <li>retrieve the nearest term from a <strong>369,703-word</strong> construct lexicon.</li>
+              </ol>
+              <p style="margin:.2rem 0">The classical methods never do any of this — they fix the axis by
+              the <em>arithmetic</em> of the loadings, and a researcher eyeballs the top items and names
+              the factor by hand. Leximax closes the loop: it rotates the axis <em>so that</em> the name
+              it would retrieve fits best. (The retrieval needs the full lexicon, so on this page the
+              names are precomputed on a 3° grid of angles and looked up as you drag.)</p>
+            </div>
+          </details>
         </div>
 
         <div class="widget">
@@ -1969,6 +2001,15 @@ function initPlayground(pg) {
 
   /* --- name chips --- */
   const chipEls = [$('#name1'), $('#name2')];
+  const defEls = [$('#def1'), $('#def2')];
+  // list an axis's top-loading items (hover a code for the item text)
+  function updateDef(k, top) {
+    const host = defEls[k]; host.textContent = '';
+    top.forEach((t, idx) => {
+      if (idx) host.append(' · ');
+      const b = document.createElement('b'); b.textContent = t.code; b.title = t.text; host.appendChild(b);
+    });
+  }
   let lastNames = ['', ''];
   function setChips(labels, forceFlash) {
     chipEls.forEach((c, k) => {
@@ -2003,12 +2044,19 @@ function initPlayground(pg) {
     const valid = isValid(t1, t2);
     $('#warn-singular').classList.toggle('show', !valid);
     rightCol.classList.toggle('degrade', !valid);
-    if (!valid) { setChips(null); return; }
+    if (!valid) { setChips(null); defEls.forEach(e => e.textContent = '—'); return; }
 
     const L = loadingsAt(A0, t1, t2);
     const pole = polesOf(L);                 // display-pole per axis
     // loading bars (dominant-pole signs)
     rowEls.forEach((r, i) => { setBar(r.b1, 0, pole[0] * L[i][0]); setBar(r.b2, 1, pole[1] * L[i][1]); });
+    // each axis's top-loading items — where its name is read from; these change
+    // as you rotate, which is exactly why the retrieved name changes
+    [0, 1].forEach(k => {
+      const top = items.map((it, i) => ({ code: it.code, text: it.text, v: pole[k] * L[i][k] }))
+        .sort((a, b) => b.v - a.v).slice(0, 3);
+      updateDef(k, top);
+    });
     // criterion meters (pole-invariant, computed from raw L)
     setMeter('varimax', critVarimax(L));
     setMeter('quartimin', critQuartimin(L));
