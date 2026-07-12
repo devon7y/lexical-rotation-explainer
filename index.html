@@ -265,9 +265,10 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 .deconstruct h3 { font-size: 1.15rem; }
 .deconstruct p { font-size: .92rem; }
 .decon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 3px; margin: 1rem 0; }
-.decon-cell { aspect-ratio: 1; border-radius: 4px; position: relative; cursor: help;
+.decon-cell { aspect-ratio: 1; border-radius: 4px; position: relative; cursor: pointer;
               display: flex; align-items: center; justify-content: center;
               font-size: .58rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+.decon-cell.sel { outline: 2px solid var(--ink); outline-offset: -1px; }
 .decon-sum { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; font-size: .9rem; color: var(--ink-2); }
 .decon-total { font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .decon-cap { font-size: .82rem; color: var(--muted); }
@@ -294,6 +295,31 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 .dc-axis .dc-axis-tag .dot { width: 9px; height: 9px; border-radius: 50%; }
 .dc-axis .dc-axis-name { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
 .dc-axis .dc-axis-arrow { color: var(--muted); }
+/* worked-example stage (step-by-step breakdown) */
+.we { border: 1px solid var(--grid); border-radius: 12px; padding: .9rem 1rem; margin: 1rem 0 .4rem; background: var(--surface); }
+.we-head { display: flex; align-items: center; gap: .5rem; font-weight: 650; color: var(--ink); font-size: 1rem; }
+.we-head-2 { margin: 1.4rem 0 .2rem; }
+.we-badge { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--ink); color: var(--surface);
+  font-size: .82rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.we-controls { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .7rem 0 .2rem; font-size: .82rem; color: var(--muted); }
+.we-controls .we-pick { border: 1.5px solid var(--grid); background: var(--page); color: var(--ink-2);
+  border-radius: 999px; padding: .28rem .7rem; cursor: pointer; font-size: .8rem; font-weight: 600; }
+.we-controls .we-pick[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); background: var(--chip-bg); }
+.we-controls .we-cur { color: var(--ink); font-weight: 600; }
+.we-steps { display: flex; flex-wrap: wrap; align-items: stretch; gap: .5rem; margin: .8rem 0; }
+.we-step { background: var(--page); border: 1px solid var(--grid); border-radius: 9px; padding: .5rem .7rem; min-width: 5.2rem; }
+.we-step .we-step-lbl { font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); display: block; margin-bottom: .18rem; }
+.we-step .we-step-val { font-family: ui-monospace, Menlo, monospace; font-size: .95rem; color: var(--ink); font-weight: 600; }
+.we-step.is-result { border-color: var(--mcol, var(--ink)); background: var(--chip-bg); }
+.we-step.is-result .we-step-val { color: var(--ink); }
+.we-arrow { align-self: center; color: var(--muted); font-size: 1.1rem; }
+.we-visual { display: flex; flex-direction: column; align-items: center; gap: .4rem; margin-top: .3rem; }
+#we-svg { width: 100%; max-width: 340px; height: auto; display: block; touch-action: none; }
+#we-svg.dial { cursor: grab; }
+#we-svg.dial:active { cursor: grabbing; }
+.we-note { font-size: .82rem; color: var(--ink-2); text-align: center; max-width: 42ch; margin: 0; }
+.we-note b { color: var(--ink); }
+.decon-agg-head, #decon-agg-head { font-weight: 650; }
 
 /* ============================================================
    S2 — PLAYGROUND
@@ -794,17 +820,32 @@ footer p { color: var(--muted); }
       </div>
     </div>
 
-    <!-- deconstruct one criterion, item by item -->
+    <!-- deconstruct one criterion, fully, step by step -->
     <div class="deconstruct panel">
       <h3>How each score is actually computed</h3>
-      <p>Every method reads the <em>same</em> loadings at the angle you picked above — it just
-      combines them into a single number differently. Pick a method and watch its score build up,
-      piece by piece. Drag the line in the chart above and these update live.</p>
+      <p>No math background assumed. Every method reads the <em>same</em> loadings at the angle you
+      picked above and turns them into one number — it just does the arithmetic differently. Pick a
+      method; we'll walk through it <strong>one piece at a time</strong>, then add the pieces up.
+      Everything updates live as you drag the line in the chart above.</p>
       <div class="decon-tabs" id="decon-tabs" role="tablist" aria-label="Choose a criterion"></div>
       <div class="decon-formula">
         <div class="f-eq" id="decon-eq"></div>
         <div class="f-plain" id="decon-plain"></div>
       </div>
+
+      <!-- STAGE 1: walk through a single item / factor / axis -->
+      <div class="we">
+        <div class="we-head"><span class="we-badge">1</span><span id="we-head-txt">Walk through one item</span></div>
+        <div class="we-controls" id="we-controls"></div>
+        <div class="we-steps" id="we-steps"></div>
+        <div class="we-visual">
+          <svg id="we-svg" aria-label="Visual breakdown of the operation"></svg>
+          <p class="we-note" id="we-note"></p>
+        </div>
+      </div>
+
+      <!-- STAGE 2: combine over everything -->
+      <div class="we-head we-head-2"><span class="we-badge">2</span><span id="decon-agg-head">Now do that for every item and add them up</span></div>
       <div id="decon-body">
         <div id="decon-grid" class="decon-grid"></div>
       </div>
@@ -1825,6 +1866,162 @@ function initScoring(pg) {
   });
   const deconTotal = $('#decon-total');
 
+  /* ===== STAGE 1 — walk through one item / factor / axis, step by step ===== */
+  const weHeadTxt = $('#we-head-txt'), weControls = $('#we-controls'),
+        weSteps = $('#we-steps'), weSvg = $('#we-svg'), weNote = $('#we-note');
+  // default worked-through item = the one furthest from the origin (biggest loadings)
+  let selItem = (function () { let bi = 0, bv = -1; A0.forEach((r, i) => { const v = r[0] * r[0] + r[1] * r[1]; if (v > bv) { bv = v; bi = i; } }); return bi; })();
+  let selFactor = 0, dialDeg = 55, weRefs = {}, weCur = null;
+  const fmt = x => Math.abs(x) < 0.005 ? '0' : x.toFixed(2);
+  function setSteps(steps) {
+    weSteps.textContent = '';
+    steps.forEach((s, i) => {
+      if (i) { const a = el('span', { class: 'we-arrow' }, weSteps); a.textContent = '→'; }
+      const box = el('div', { class: 'we-step' + (s.result ? ' is-result' : '') }, weSteps);
+      if (s.result) box.style.setProperty('--mcol', CRIT[mode].color);
+      el('span', { class: 'we-step-lbl', text: s.lbl }, box);
+      el('span', { class: 'we-step-val', text: s.val }, box);
+    });
+  }
+  // per-mode control row (item hint / factor toggle / drag hint)
+  function buildControls() {
+    weControls.textContent = ''; weCur = null;
+    if (CRIT[mode].kind === 'tiles') {
+      weHeadTxt.textContent = 'Walk through one item';
+      weControls.append('current item: '); weCur = el('span', { class: 'we-cur' }, weControls);
+      weControls.append(' — click any tile in step 2 to change it.');
+    } else if (CRIT[mode].kind === 'columns') {
+      weHeadTxt.textContent = 'Walk through one factor';
+      [0, 1].forEach(f => {
+        const b = el('button', { class: 'we-pick', text: 'Factor ' + (f + 1) }, weControls);
+        b.setAttribute('aria-pressed', String(f === selFactor));
+        b.onclick = () => { selFactor = f; buildControls(); render(); };
+      });
+    } else {
+      weHeadTxt.textContent = 'How the match is measured';
+      weControls.append('Drag the blue arrow to feel how cosine works.');
+    }
+  }
+  // build the SVG concept visual once per tab switch (drag state persists)
+  function buildWEVisual() {
+    weSvg.textContent = ''; weSvg.classList.remove('dial'); weSvg.onpointerdown = null; weRefs = {};
+    const m = CRIT[mode];
+    if (m.kind === 'tiles') {                     // product = rectangle area (+ equal-area square)
+      weSvg.setAttribute('viewBox', '0 0 300 182');
+      const ox = 52, oy = 150, MAX = 116; weRefs.ox = ox; weRefs.oy = oy; weRefs.MAX = MAX;
+      weRefs.scaleMax = (mode === 'geomin' ? maxSq + .01 : maxSq) || 1;
+      svgEl('line', { x1: ox, y1: oy, x2: ox + MAX + 24, y2: oy, stroke: 'var(--grid)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      svgEl('line', { x1: ox, y1: oy, x2: ox, y2: oy - MAX - 24, stroke: 'var(--grid)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      weRefs.rect = svgEl('rect', { x: ox, y: oy, width: 0, height: 0, fill: m.color, 'fill-opacity': .28, stroke: m.color, 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      if (mode === 'geomin') weRefs.square = svgEl('rect', { x: ox, y: oy, width: 0, height: 0, fill: 'none', stroke: 'var(--ink)', 'stroke-dasharray': '4 3', 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      weRefs.wLbl = svgEl('text', { x: ox, y: oy + 16, fill: 'var(--muted)', 'font-size': 11, 'text-anchor': 'middle' }, weSvg);
+      weRefs.hLbl = svgEl('text', { x: ox - 8, y: oy, fill: 'var(--muted)', 'font-size': 11, 'text-anchor': 'end' }, weSvg);
+      weRefs.aLbl = svgEl('text', { fill: 'var(--ink)', 'font-size': 12, 'font-weight': 700, 'text-anchor': 'middle' }, weSvg);
+    } else if (m.kind === 'columns') {            // variance = spread of dots around the mean
+      weSvg.setAttribute('viewBox', '0 0 300 120');
+      const x0 = 22, x1 = 278, yc = 60; weRefs.x0 = x0; weRefs.x1 = x1; weRefs.yc = yc;
+      svgEl('line', { x1: x0, y1: yc, x2: x1, y2: yc, stroke: 'var(--grid)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      const t0 = svgEl('text', { x: x0, y: yc + 30, fill: 'var(--muted)', 'font-size': 10, 'text-anchor': 'middle' }, weSvg); t0.textContent = '0';
+      const tm = svgEl('text', { x: x1, y: yc + 30, fill: 'var(--muted)', 'font-size': 10, 'text-anchor': 'middle' }, weSvg); tm.textContent = 'big';
+      weRefs.band = svgEl('rect', { x: x0, y: yc - 24, width: 0, height: 48, fill: m.color, 'fill-opacity': .12 }, weSvg);
+      weRefs.dots = items.map(() => svgEl('circle', { r: 3.2, fill: m.color, 'fill-opacity': .8 }, weSvg));
+      weRefs.mean = svgEl('line', { y1: yc - 30, y2: yc + 20, stroke: 'var(--ink)', 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      weRefs.meanLbl = svgEl('text', { y: yc - 34, fill: 'var(--ink)', 'font-size': 10, 'text-anchor': 'middle' }, weSvg); weRefs.meanLbl.textContent = 'mean';
+    } else {                                       // cosine dial (draggable)
+      weSvg.setAttribute('viewBox', '-100 -96 200 196'); weSvg.classList.add('dial');
+      svgEl('circle', { cx: 0, cy: 0, r: 72, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      svgEl('line', { x1: 0, y1: 0, x2: 78, y2: 0, stroke: 'var(--muted)', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      svgEl('circle', { cx: 78, cy: 0, r: 4, fill: 'var(--muted)' }, weSvg);
+      const wl = svgEl('text', { x: 82, y: 4, fill: 'var(--muted)', 'font-size': 10 }, weSvg); wl.textContent = 'word';
+      weRefs.arc = svgEl('path', { d: '', fill: 'none', stroke: 'var(--axis1)', 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke', opacity: .6 }, weSvg);
+      weRefs.armB = svgEl('line', { x1: 0, y1: 0, x2: 78, y2: 0, stroke: 'var(--axis1)', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, weSvg);
+      weRefs.tipB = svgEl('circle', { cx: 78, cy: 0, r: 4, fill: 'var(--axis1)' }, weSvg);
+      weRefs.axl = svgEl('text', { fill: 'var(--axis1)', 'font-size': 10 }, weSvg); weRefs.axl.textContent = 'axis';
+      weRefs.cosT = svgEl('text', { x: 0, y: -82, fill: 'var(--ink)', 'font-size': 13, 'font-weight': 700, 'text-anchor': 'middle' }, weSvg);
+      const dialUpdate = () => {
+        const rad = dialDeg * DEG, x = 78 * Math.cos(rad), y = -78 * Math.sin(rad);
+        weRefs.armB.setAttribute('x2', x); weRefs.armB.setAttribute('y2', y);
+        weRefs.tipB.setAttribute('cx', x); weRefs.tipB.setAttribute('cy', y);
+        weRefs.axl.setAttribute('x', x + (x < 0 ? -8 : 6)); weRefs.axl.setAttribute('y', y - 2);
+        weRefs.arc.setAttribute('d', `M26 0 A26 26 0 0 0 ${(26 * Math.cos(rad)).toFixed(1)} ${(-26 * Math.sin(rad)).toFixed(1)}`);
+        weRefs.cosT.textContent = 'cos = ' + Math.cos(rad).toFixed(2) + '   (' + Math.round(dialDeg) + '°)';
+      };
+      weRefs.dialUpdate = dialUpdate; dialUpdate();
+      weSvg.onpointerdown = e => {
+        weSvg.setPointerCapture(e.pointerId);
+        const move = ev => { const pt = weSvg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+          const loc = pt.matrixTransform(weSvg.getScreenCTM().inverse());
+          dialDeg = clamp(Math.abs(Math.atan2(-loc.y, loc.x) / DEG), 0, 180); dialUpdate(); };
+        move(e);
+        const up = () => { weSvg.removeEventListener('pointermove', move); weSvg.removeEventListener('pointerup', up); };
+        weSvg.addEventListener('pointermove', move); weSvg.addEventListener('pointerup', up);
+      };
+    }
+  }
+  // fill the worked example at the current θ (and current item / factor)
+  function renderWE(L) {
+    const m = CRIT[mode];
+    if (m.kind === 'tiles') {
+      const i = selItem, geo = mode === 'geomin';
+      const l1 = L[i][0], l2 = L[i][1], s1 = l1 * l1, s2 = l2 * l2;
+      const a = geo ? s1 + .01 : s1, b = geo ? s2 + .01 : s2, area = a * b, val = geo ? Math.sqrt(area) : area;
+      if (weCur) weCur.textContent = items[i].code;
+      setSteps(geo ? [
+        { lbl: 'loadings', val: fmt(l1) + ', ' + fmt(l2) },
+        { lbl: 'square, +.01', val: fmt(a) + ', ' + fmt(b) },
+        { lbl: 'multiply', val: fmt(area) },
+        { lbl: '√ = geo. mean', val: val.toFixed(3), result: true },
+      ] : [
+        { lbl: 'loadings', val: fmt(l1) + ', ' + fmt(l2) },
+        { lbl: 'square each', val: fmt(s1) + ', ' + fmt(s2) },
+        { lbl: 'multiply', val: fmt(s1) + ' × ' + fmt(s2) },
+        { lbl: 'contribution', val: val.toFixed(3), result: true },
+      ]);
+      const sc = weRefs.MAX / weRefs.scaleMax;
+      const w = clamp(a * sc, 0, weRefs.MAX + 30), h = clamp(b * sc, 0, weRefs.MAX + 30);
+      weRefs.rect.setAttribute('x', weRefs.ox); weRefs.rect.setAttribute('y', weRefs.oy - h);
+      weRefs.rect.setAttribute('width', w); weRefs.rect.setAttribute('height', h);
+      weRefs.wLbl.setAttribute('x', weRefs.ox + w / 2); weRefs.wLbl.textContent = (geo ? 'L₁²+.01=' : 'L₁²=') + fmt(a);
+      weRefs.hLbl.setAttribute('y', weRefs.oy - h / 2); weRefs.hLbl.textContent = (geo ? 'L₂²+.01=' : 'L₂²=') + fmt(b);
+      weRefs.aLbl.setAttribute('x', weRefs.ox + w / 2 + 2); weRefs.aLbl.setAttribute('y', weRefs.oy - h / 2 + 4);
+      weRefs.aLbl.textContent = 'area ' + fmt(area);
+      if (geo && weRefs.square) { const side = Math.sqrt(w * h);
+        weRefs.square.setAttribute('x', weRefs.ox); weRefs.square.setAttribute('y', weRefs.oy - side);
+        weRefs.square.setAttribute('width', side); weRefs.square.setAttribute('height', side); }
+      weNote.innerHTML = geo
+        ? 'The dashed <b>square</b> has the same area as the rectangle; its <b>side</b> (√area) is this item’s geomin contribution. One tiny loading still keeps it small.'
+        : 'The contribution <em>is</em> the rectangle’s <b>area</b> — large only when <em>both</em> sides are large. One tiny loading ⇒ a thin sliver ⇒ ≈ 0.';
+    } else if (m.kind === 'columns') {
+      const f = selFactor, sq = L.map(r => r[f] ** 2);
+      const mean = sq.reduce((x, y) => x + y, 0) / sq.length;
+      const varf = sq.reduce((x, y) => x + (y - mean) ** 2, 0) / sq.length, std = Math.sqrt(varf);
+      setSteps([
+        { lbl: 'square the loadings', val: '28 sizes' },
+        { lbl: 'their average = mean', val: fmt(mean) },
+        { lbl: 'spread around mean', val: '±' + fmt(std) },
+        { lbl: 'variance', val: varf.toFixed(3), result: true },
+      ]);
+      const { x0, x1, yc } = weRefs, span = x1 - x0, sc = span / (maxSq || 1);
+      weRefs.dots.forEach((d, i) => { d.setAttribute('cx', x0 + clamp(sq[i] * sc, 0, span)); d.setAttribute('cy', yc + ((i % 7) - 3) * 3.4); });
+      const mx = x0 + clamp(mean * sc, 0, span);
+      weRefs.mean.setAttribute('x1', mx); weRefs.mean.setAttribute('x2', mx); weRefs.meanLbl.setAttribute('x', mx);
+      const bx0 = x0 + clamp((mean - std) * sc, 0, span), bx1 = x0 + clamp((mean + std) * sc, 0, span);
+      weRefs.band.setAttribute('x', bx0); weRefs.band.setAttribute('width', Math.max(0, bx1 - bx0));
+      weNote.innerHTML = 'Each dot is one item’s squared loading. <b>Variance</b> = how far they spread from the mean (the shaded band). Bunched ⇒ small; a mix of near-zero and big ⇒ large. Varimax wants it large.';
+    } else {
+      const e = grid.entries[gcell(theta)][gcell(norm180(theta + 90))];
+      const w1 = e ? grid.grid_labels[e[0]] : '—', w2 = e ? grid.grid_labels[e[1]] : '—', mm = e ? e[2] : 0;
+      setSteps([
+        { lbl: 'each axis → meaning arrow', val: '2 arrows' },
+        { lbl: 'nearest words', val: w1 + ' / ' + w2 },
+        { lbl: 'mean cosine match', val: mm.toFixed(3), result: true },
+      ]);
+      weNote.innerHTML = '<b>cos = 1</b> when the arrows point the same way (the word fits), <b>0</b> at a right angle (unrelated), <b>−1</b> opposite. Drag the blue arrow. Real leximax lives in 300+ dimensions; this is the same idea in 2-D.';
+    }
+  }
+  // clicking a tile picks it for the walk-through
+  cells.forEach((c, i) => c.addEventListener('click', () => { selItem = i; render(); }));
+
   let mode = 'quartimin';
   const tabHost = $('#decon-tabs'), tabs = {};
   for (const key of ['varimax', 'quartimin', 'geomin', 'nameability']) {
@@ -1842,6 +2039,7 @@ function initScoring(pg) {
     $('#decon-eq').textContent = m.formula;
     $('#decon-plain').innerHTML = m.plain.replace(/\s+/g, ' ');   // static author markup
     $('#decon-cap').textContent = m.cap;
+    buildControls(); buildWEVisual();
   }
   // paint the selected criterion's breakdown at the current θ
   function renderDecon(L) {
@@ -1855,6 +2053,7 @@ function initScoring(pg) {
         total += contrib;
         const t = clamp(contrib / (norm || 1), 0, 1);
         c.style.background = `rgba(${rr},${gg},${bb},${(0.06 + 0.94 * t).toFixed(3)})`;
+        c.classList.toggle('sel', i === selItem);
         c.textContent = items[i].code.replace(/[^0-9]/g, '');
         c._tip = e => { tipRow(items[i].text,
           (geo ? '√((L₁²+.01)(L₂²+.01)) = ' : 'L₁²·L₂² = ') + contrib.toFixed(4),
@@ -1912,8 +2111,10 @@ function initScoring(pg) {
     }
     scrub.setAttribute('x1', xOf(theta)); scrub.setAttribute('x2', xOf(theta));
     scrubGrip.setAttribute('cx', xOf(theta));
-    // the selected criterion's breakdown at this θ
-    renderDecon(loadingsAt(A0, theta, t2));
+    // the selected criterion's breakdown at this θ — walk-through + aggregate
+    const Lnow = loadingsAt(A0, theta, t2);
+    renderWE(Lnow);
+    renderDecon(Lnow);
   }
   function animateTheta(target) {
     if (REDUCED.matches) { theta = norm180(target); render(); return; }
