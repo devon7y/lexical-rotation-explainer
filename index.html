@@ -271,6 +271,29 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 .decon-sum { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; font-size: .9rem; color: var(--ink-2); }
 .decon-total { font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .decon-cap { font-size: .82rem; color: var(--muted); }
+/* per-criterion demo: tabs, formula box, and the varimax / nameability layouts */
+.decon-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 .8rem; }
+.decon-tabs .dtab { border: 1.5px solid var(--mcol, var(--grid)); background: transparent; color: var(--ink);
+  border-radius: 999px; padding: .34rem .8rem; cursor: pointer; font-size: .84rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: .4rem; }
+.decon-tabs .dtab .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mcol); }
+.decon-tabs .dtab[aria-selected="true"] { background: var(--chip-bg); }
+.decon-tabs .dtab[aria-selected="false"] { border-color: var(--grid); color: var(--ink-2); }
+.decon-formula { background: var(--chip-bg); border-radius: 8px; padding: .6rem .8rem; margin-bottom: .8rem; }
+.decon-formula .f-eq { font-family: ui-monospace, Menlo, monospace; font-size: .88rem; color: var(--ink); overflow-x: auto; }
+.decon-formula .f-plain { font-size: .85rem; color: var(--ink-2); margin-top: .4rem; }
+.dc-cols { display: flex; flex-direction: column; gap: .8rem; margin: .2rem 0 .4rem; }
+.dc-col-head { display: flex; justify-content: space-between; font-size: .8rem; color: var(--ink-2); margin-bottom: .2rem; }
+.dc-col-head .dc-col-var { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.dc-col-svg { width: 100%; height: auto; display: block; background: var(--surface); border-radius: 6px; }
+.dc-axes { display: flex; flex-direction: column; gap: .5rem; margin: .2rem 0 .4rem; }
+.dc-axis { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: center;
+  background: var(--surface); border: 1px solid var(--grid); border-radius: 8px; padding: .5rem .8rem; }
+.dc-axis .dc-axis-tag { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--ink-2); display: flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.dc-axis .dc-axis-tag .dot { width: 9px; height: 9px; border-radius: 50%; }
+.dc-axis .dc-axis-name { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+.dc-axis .dc-axis-arrow { color: var(--muted); }
 
 /* ============================================================
    S2 — PLAYGROUND
@@ -769,18 +792,22 @@ footer p { color: var(--muted); }
 
     <!-- deconstruct one criterion, item by item -->
     <div class="deconstruct panel">
-      <h3>Where the number comes from: oblimin, item by item</h3>
-      <p>A criterion is <strong>a sum over items</strong> — nothing more. Oblimin (the psychology
-      default) adds up, for every item, the product of its two squared loadings
-      <code>L₁² · L₂²</code>. An item loading on <em>one</em> factor contributes almost nothing; an
-      item smeared across <em>both</em> contributes a lot. Minimizing the total pushes every item
-      onto a single factor. Each tile below is one item at the angle you selected above — brighter
-      means it is muddying two factors at once.</p>
-      <div id="decon-grid" class="decon-grid"></div>
+      <h3>How each score is actually computed</h3>
+      <p>Every method reads the <em>same</em> loadings at the angle you picked above — it just
+      combines them into a single number differently. Pick a method and watch its score build up,
+      piece by piece. Drag the line in the chart above and these update live.</p>
+      <div class="decon-tabs" id="decon-tabs" role="tablist" aria-label="Choose a criterion"></div>
+      <div class="decon-formula">
+        <div class="f-eq" id="decon-eq"></div>
+        <div class="f-plain" id="decon-plain"></div>
+      </div>
+      <div id="decon-body">
+        <div id="decon-grid" class="decon-grid"></div>
+      </div>
       <div class="decon-sum">
-        <span>sum over all items =</span>
+        <span id="decon-sum-lbl">sum over all items =</span>
         <span class="decon-total" id="decon-total">—</span>
-        <span class="decon-cap">this <em>is</em> the oblimin criterion (lower is cleaner)</span>
+        <span class="decon-cap" id="decon-cap"></span>
       </div>
     </div>
   </div>
@@ -1610,14 +1637,18 @@ function initScoring(pg) {
     geomin:      { css: METHODS.geominQ.css, name: 'GeominQ',  goal: 'min', raw: [] },
     nameability: { css: METHODS.leximax.css, name: 'Leximax',  goal: 'max', raw: [] },
   };
-  let maxCross = 0;
+  let maxCross = 0, maxGeom = 0, maxSq = 0;   // scales for the deconstruction views
   for (let s = 0; s <= N; s++) {
     const th = s * STEP, L = loadingsAt(A0, th, th + 90);
     series.varimax.raw.push(critVarimax(L));
     series.quartimin.raw.push(critQuartimin(L));
     series.geomin.raw.push(critGeomin(L));
     series.nameability.raw.push(nameCrit(th, th + 90));
-    for (const row of L) maxCross = Math.max(maxCross, row[0] ** 2 * row[1] ** 2);
+    for (const row of L) {
+      maxCross = Math.max(maxCross, row[0] ** 2 * row[1] ** 2);
+      maxGeom = Math.max(maxGeom, Math.sqrt((row[0] ** 2 + .01) * (row[1] ** 2 + .01)));
+      maxSq = Math.max(maxSq, row[0] ** 2, row[1] ** 2);
+    }
   }
   // normalise each to "goodness" in [0,1] (higher = this method prefers it) + find its pick
   for (const key in series) {
@@ -1700,17 +1731,133 @@ function initScoring(pg) {
     srRows[key] = { row, sc: el('span', { class: 'sc' }, row), gap: el('span', { class: 'gap' }, row) };
   }
 
-  // deconstruction tiles: one per item, brightness = cross-loading contribution
-  const deconHost = $('#decon-grid'); deconHost.textContent = '';
+  /* ---- deconstruction: how each criterion is built from the loadings ---- */
+  const CRIT = {
+    varimax: { name: 'Varimax', kind: 'columns', color: 'var(--m-varimax)',
+      formula: 'Σ over the 2 factors of  variance( squared loadings in that column )',
+      plain: 'Varimax wants each factor’s column to be a spread of big and near-zero squared loadings — a crisp defining cluster. It adds up the variance of the squared loadings within each column.',
+      cap: 'higher = crisper (each factor has a clear defining set)' },
+    quartimin: { name: 'Oblimin', kind: 'tiles', color: 'var(--m-oblimin)',
+      formula: 'Σ over items of  L₁² · L₂²',
+      plain: 'Oblimin (the psychology default) adds up each item’s cross-loading product. An item on one factor contributes ≈ 0; an item smeared across both contributes a lot.',
+      cap: 'lower = cleaner (fewer cross-loadings)' },
+    geomin: { name: 'Geomin', kind: 'tiles', color: 'var(--m-geomin)',
+      formula: 'Σ over items of  √( (L₁²+.01)(L₂²+.01) )',
+      plain: 'Geomin (the Mplus default) sums a softened geometric mean of each item’s squared loadings. The +.01 makes it tolerate a small second loading, so it’s gentler than oblimin.',
+      cap: 'lower = cleaner' },
+    nameability: { name: 'Leximax', kind: 'axes', color: 'var(--m-leximax)',
+      formula: 'mean over the 2 axes of  cos( axis meaning , retrieved word )',
+      plain: 'Leximax scores an orientation by how nameable it is: for each axis it retrieves the nearest lexicon word, then measures the cosine between that axis’s meaning direction and the word’s embedding, and averages the two. It needs the full lexicon, so it’s read from the precomputed grid.',
+      cap: 'higher = the axes land on nameable words' },
+  };
   const AX2 = cssHex('--axis2', '#e34948');
   const rr = parseInt(AX2.slice(1, 3), 16), gg = parseInt(AX2.slice(3, 5), 16), bb = parseInt(AX2.slice(5, 7), 16);
-  const cells = items.map(it => {
-    const c = el('div', { class: 'decon-cell' }, deconHost);
-    c.addEventListener('pointermove', e => { c._tip(e); });
+  const deconBody = $('#decon-body');
+  // (a) item tiles — reused by oblimin and geomin
+  const tileWrap = $('#decon-grid');
+  const cells = items.map(() => {
+    const c = el('div', { class: 'decon-cell' }, tileWrap);
+    c.addEventListener('pointermove', e => c._tip && c._tip(e));
     c.addEventListener('pointerleave', hideTip);
     return c;
   });
+  // (b) column strips — varimax (squared loadings per factor, with mean + variance)
+  const colWrap = el('div', { class: 'dc-cols' }, deconBody);
+  const CW2 = 280, CH2 = 46;
+  const colRefs = [0, 1].map(f => {
+    const row = el('div', { class: 'dc-col' }, colWrap);
+    const head = el('div', { class: 'dc-col-head' }, row);
+    el('span', { text: 'Factor ' + (f + 1) + ' — squared loadings' }, head);
+    const varEl = el('span', { class: 'dc-col-var' }, head);
+    const svgc = svgEl('svg', { class: 'dc-col-svg', viewBox: `0 0 ${CW2} ${CH2}`, preserveAspectRatio: 'none' }, row);
+    const gap = 1.5, w = (CW2 - gap * (items.length - 1)) / items.length;
+    const bars = items.map((_, i) => svgEl('rect', { x: i * (w + gap), width: w, y: CH2, height: 0,
+      fill: CRIT.varimax.color, rx: 1 }, svgc));
+    const meanLine = svgEl('line', { x1: 0, x2: CW2, stroke: 'var(--ink)', 'stroke-dasharray': '4 3',
+      'stroke-width': 1, 'vector-effect': 'non-scaling-stroke', opacity: .75 }, svgc);
+    return { varEl, bars, meanLine };
+  });
+  // (c) axis rows — leximax (each axis → its retrieved word)
+  const axisWrap = el('div', { class: 'dc-axes' }, deconBody);
+  const axisRefs = [0, 1].map(k => {
+    const row = el('div', { class: 'dc-axis' }, axisWrap);
+    const tag = el('span', { class: 'dc-axis-tag' }, row);
+    el('span', { class: 'dot', style: `background:var(--axis${k + 1})` }, tag); tag.append('Axis ' + (k + 1));
+    const wrap = el('span', {}, row);
+    el('span', { class: 'dc-axis-arrow', text: '→ ' }, wrap);
+    const nameEl = el('b', { class: 'dc-axis-name' }, wrap);
+    return { nameEl };
+  });
   const deconTotal = $('#decon-total');
+
+  let mode = 'quartimin';
+  const tabHost = $('#decon-tabs'), tabs = {};
+  for (const key of ['varimax', 'quartimin', 'geomin', 'nameability']) {
+    const b = el('button', { class: 'dtab', role: 'tab', style: `--mcol:${CRIT[key].color}` }, tabHost);
+    el('span', { class: 'dot' }, b); b.append(CRIT[key].name);
+    b.onclick = () => { mode = key; syncTabs(); render(); };
+    tabs[key] = b;
+  }
+  function syncTabs() {
+    const m = CRIT[mode];
+    for (const k in tabs) tabs[k].setAttribute('aria-selected', String(k === mode));
+    tileWrap.style.display = m.kind === 'tiles' ? '' : 'none';
+    colWrap.style.display = m.kind === 'columns' ? '' : 'none';
+    axisWrap.style.display = m.kind === 'axes' ? '' : 'none';
+    $('#decon-eq').textContent = m.formula;
+    $('#decon-plain').textContent = m.plain;
+    $('#decon-cap').textContent = m.cap;
+  }
+  // paint the selected criterion's breakdown at the current θ
+  function renderDecon(L) {
+    const m = CRIT[mode];
+    if (m.kind === 'tiles') {
+      const geo = mode === 'geomin', norm = geo ? maxGeom : maxCross;
+      let total = 0;
+      cells.forEach((c, i) => {
+        const contrib = geo ? Math.sqrt((L[i][0] ** 2 + .01) * (L[i][1] ** 2 + .01))
+                            : L[i][0] ** 2 * L[i][1] ** 2;
+        total += contrib;
+        const t = clamp(contrib / (norm || 1), 0, 1);
+        c.style.background = `rgba(${rr},${gg},${bb},${(0.06 + 0.94 * t).toFixed(3)})`;
+        c.textContent = items[i].code.replace(/[^0-9]/g, '');
+        c._tip = e => { tipRow(items[i].text,
+          (geo ? '√((L₁²+.01)(L₂²+.01)) = ' : 'L₁²·L₂² = ') + contrib.toFixed(4),
+          items[i].construct); positionTip(e.clientX, e.clientY); };
+      });
+      deconTotal.textContent = f3(total);
+      $('#decon-sum-lbl').textContent = 'sum over all items =';
+    } else if (m.kind === 'columns') {
+      let total = 0;
+      [0, 1].forEach(f => {
+        const sq = L.map(r => r[f] ** 2);
+        const mean = sq.reduce((a, b) => a + b, 0) / sq.length;
+        const varf = sq.reduce((a, b) => a + (b - mean) ** 2, 0) / sq.length;
+        total += varf;
+        const ref = colRefs[f];
+        ref.bars.forEach((bar, i) => {
+          const h = clamp(sq[i] / (maxSq || 1), 0, 1) * (CH2 - 2);
+          bar.setAttribute('y', CH2 - h); bar.setAttribute('height', h);
+        });
+        const my = CH2 - clamp(mean / (maxSq || 1), 0, 1) * (CH2 - 2);
+        ref.meanLine.setAttribute('y1', my); ref.meanLine.setAttribute('y2', my);
+        ref.varEl.textContent = 'variance = ' + f3(varf);
+      });
+      deconTotal.textContent = f3(total);
+      $('#decon-sum-lbl').textContent = 'variance (F1) + variance (F2) =';
+    } else {   // axes — leximax
+      const e = grid.entries[gcell(theta)][gcell(norm180(theta + 90))];
+      if (e) {
+        axisRefs[0].nameEl.textContent = grid.grid_labels[e[0]];
+        axisRefs[1].nameEl.textContent = grid.grid_labels[e[1]];
+        deconTotal.textContent = f3(e[2]);
+      } else {
+        axisRefs.forEach(a => a.nameEl.textContent = '—'); deconTotal.textContent = '—';
+      }
+      $('#decon-sum-lbl').textContent = 'mean match over the 2 axes =';
+    }
+  }
+  syncTabs();
 
   let theta = series.varimax.optDeg;   // start on an interior angle, not the chart edge
   function render() {
@@ -1730,18 +1877,8 @@ function initScoring(pg) {
     }
     scrub.setAttribute('x1', xOf(theta)); scrub.setAttribute('x2', xOf(theta));
     scrubGrip.setAttribute('cx', xOf(theta));
-    // deconstruction tiles at this θ
-    const L = loadingsAt(A0, theta, t2);
-    let total = 0;
-    cells.forEach((c, i) => {
-      const contrib = L[i][0] ** 2 * L[i][1] ** 2; total += contrib;
-      const t = clamp(contrib / (maxCross || 1), 0, 1);
-      c.style.background = `rgba(${rr},${gg},${bb},${(0.06 + 0.94 * t).toFixed(3)})`;
-      c.textContent = items[i].code.replace(/[^0-9]/g, '');
-      c._tip = e => { tipRow(items[i].text, `L₁²·L₂² = ${contrib.toFixed(4)}`,
-        items[i].construct); positionTip(e.clientX, e.clientY); };
-    });
-    deconTotal.textContent = f3(total);
+    // the selected criterion's breakdown at this θ
+    renderDecon(loadingsAt(A0, theta, t2));
   }
   function animateTheta(target) {
     if (REDUCED.matches) { theta = norm180(target); render(); return; }
