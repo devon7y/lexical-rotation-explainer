@@ -605,29 +605,35 @@ footer p { color: var(--muted); }
       </div>
     </div>
 
-    <!-- BLOCK 1 — a loading is a shadow -->
+    <!-- BLOCK 1 — a loading is how far an item reaches along an axis -->
     <div class="block">
       <div class="block-num">1</div>
       <div class="block-body">
-        <h3>A “loading” is just a shadow</h3>
+        <h3>A “loading” is how far an item reaches <em>along</em> an axis</h3>
         <p>Pick a direction and call it a factor. An item's <strong>loading</strong> on that
-        factor is simply how far the item's <strong>shadow</strong> falls along it — its
-        projection onto the axis. Point the axis <em>at</em> an item and the shadow is long
-        (big loading). Point it <em>across</em> the item and the shadow shrinks toward zero.</p>
-        <p><strong>Drag the axis handle</strong> below and watch each item's shadow — and its
-        loading bar — grow and shrink. That is the whole idea; the playground just does it for
-        two axes and all 28 items at once.</p>
+        factor is <strong>how far the item reaches along that axis</strong> — how strongly it
+        lines up with that direction. Aim the axis straight <em>at</em> an item and its loading
+        is large; swing the axis so it runs <em>across</em> the item, at right angles, and the
+        loading shrinks to zero.</p>
+        <p>It is the part of the item that the axis <strong>captures</strong> — the reach
+        <em>along</em> the axis, <strong>not</strong> the sideways gap left over to the side.
+        <strong>Drag the axis handle</strong> below: the <strong>solid colored bar</strong> is
+        the loading (the reach along the axis), and the loading chart tracks its length. The
+        faint dashed line is only the construction — drop the item straight onto the axis to see
+        where it lands. Point at the item → long reach; point away → almost none. The playground
+        does this for two axes and all 28 items at once.</p>
         <details class="math">
           <summary>the one line of math</summary>
           <div class="body">For an item at point <code>p</code> and an axis pointing in unit
           direction <code>u = [cos θ, sin θ]</code>, the loading is the dot product
-          <code>p · u = pₓcos θ + p_y sin θ</code> — the signed length of the shadow.
-          (With square, perpendicular axes the shadow <em>is</em> the loading; we let the
-          axes tilt in step 3.)</div>
+          <code>p · u = pₓcos θ + p_y sin θ</code> — the signed length of the item's reach
+          <em>along</em> the axis (its projection). The leftover perpendicular distance is what
+          this axis does <em>not</em> capture. With square, perpendicular axes this projection
+          is exactly the loading; we let the axes tilt in step 3.</div>
         </details>
       </div>
       <div class="block-fig panel">
-        <svg id="shadow-svg" aria-label="One draggable axis with a few item points casting shadows onto it"></svg>
+        <svg id="shadow-svg" aria-label="One draggable axis; each item's reach along the axis is its loading"></svg>
         <div id="shadow-bars"></div>
         <p class="scatter-note" id="shadow-note"></p>
       </div>
@@ -649,11 +655,37 @@ footer p { color: var(--muted); }
         almost every item loads middling on both (fat <span class="ink-x">cross-loadings</span>).
         <strong>Clean</strong> aims them along the clusters. Or drag the handle yourself.</p>
         <div class="callout" style="border-left-color: var(--m-oblimin); margin-top: 1rem">
-          <p id="ss-oblique-note"><strong>Notice it never gets perfectly clean.</strong> These
-          two factors' clusters aren't a right angle apart, so square axes can't hit both at
-          once. That's exactly why <em>oblique</em> methods exist — let the axes tilt to match
-          the clusters and the structure gets cleaner still, at the price of letting the factors
-          correlate. <button class="linkbtn" id="ss-tilt">Tilt the axes to match →</button></p>
+          <p id="ss-oblique-note"><strong>Why it never gets perfectly clean — and the real trade-off.</strong>
+          These two clusters aren't 90° apart, so perpendicular axes can't lie along both at once; the
+          items between them get stranded, loading on both. Tilt the axes to <em>follow</em> the
+          clusters and each item drops cleanly onto one factor —
+          <button class="linkbtn" id="ss-tilt">tilt them to match →</button>. The only catch: axes
+          that lean toward each other describe factors that <em>correlate</em>.</p>
+          <details class="math" style="margin-top:.6rem">
+            <summary>Why we chase clean structure, and when to allow the factors to correlate</summary>
+            <div class="body">
+              <p style="margin:.2rem 0 .6rem"><strong>Why “simple structure”?</strong> It isn't just
+              “big loadings.” It's each item loading big on <em>one</em> factor and near-zero on the
+              rest. That pattern is what makes a factor <em>interpretable</em>: it's defined by a clean
+              set of items, so you can read what it measures and give it a name. An item that loads on
+              two factors at once belongs to neither and blurs both — you can't tell which factor it
+              speaks for.</p>
+              <p style="margin:.2rem 0 .6rem"><strong>Orthogonal vs oblique is one question, not two.</strong>
+              Perpendicular (orthogonal) rotation is just oblique rotation with the factor correlation
+              <em>handcuffed to zero</em>. So letting the axes tilt can only match or <em>beat</em> the
+              square solution on structure — you never trade cleanliness away for correlation. What you
+              “pay” is only that you're now admitting the two factors are related.</p>
+              <p style="margin:.2rem 0"><strong>So which do you prioritize?</strong> Uncorrelated factors
+              are tidier to reason about and to score — each is an independent dimension, and their
+              loadings read as plain item-factor correlations — which is why orthogonal was long the
+              default. But real psychological constructs (anxiety and depression; the behavioural and
+              emotional sides of procrastination here) usually <em>do</em> correlate, and forcing them
+              apart distorts the picture. Modern practice: <strong>allow oblique by default.</strong> If
+              the factors truly are independent it comes back at φ ≈ 0 and you've lost nothing; if they
+              aren't, you've captured a real fact about the constructs. One caveat: if the tilt drives
+              the correlation <em>very</em> high, that's a hint the two “factors” may really be one.</p>
+            </div>
+          </details>
         </div>
       </div>
       <div class="block-fig panel">
@@ -753,8 +785,9 @@ footer p { color: var(--muted); }
 <section id="s2">
   <div class="wrap">
     <h2>The playground: rotate the axes yourself</h2>
-    <p>Below are the 28 items of a real questionnaire measuring procrastination and anxiety,
-    factor-analyzed into a two-dimensional map.
+    <p>Below are the 28 items of a real <strong>procrastination</strong> questionnaire — its items
+    split into a <em>behavioural</em> group and an <em>emotional</em> group — factor-analyzed into a
+    two-dimensional map.
     <strong>Drag either colored handle</strong> to point an axis anywhere you like — the axes
     don't have to stay perpendicular (that's an <em>oblique</em> rotation, and it means the
     factors are allowed to correlate). Everything on the right updates live, including the
@@ -1248,7 +1281,7 @@ function placeKnob(grp, angle, r) {
 }
 
 /* ================================================================
-   BASICS — three building blocks (shadow, simple structure, score)
+   BASICS — three building blocks (reach along an axis, simple structure, score)
    ================================================================ */
 function initBasics(pg) {
   const AX1 = cssHex('--axis1', '#2a78d6'), AX2 = cssHex('--axis2', '#e34948');
@@ -1356,7 +1389,7 @@ function initBasics(pg) {
   const angOblique = obliqueOpt(critQuartimin);     // best tilted pair (through clusters)
   const angGeomin  = obliqueOpt(critGeomin);
 
-  /* ---------- BLOCK 1 — a loading is a shadow ---------- */
+  /* ---------- BLOCK 1 — a loading is the item's reach along an axis ---------- */
   (function shadowDemo() {
     const svg = $('#shadow-svg');
     // 5 items spread across the fan of angles
@@ -1368,25 +1401,35 @@ function initBasics(pg) {
     const g = svgEl('g', { transform: 'scale(1,-1)' }, svg);
     svgEl('circle', { r: ext, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, g);
     const axis = svgEl('line', { class: 'axis-line a1', 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, g);
-    const guides = uniq.map(() => ({
-      drop: svgEl('line', { class: 'proj', stroke: 'var(--muted)', 'stroke-dasharray': '3 3', 'vector-effect': 'non-scaling-stroke' }, g),
-      lead: svgEl('line', { stroke: 'var(--axis1)', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: .55, 'vector-effect': 'non-scaling-stroke' }, g),
-      tick: svgEl('circle', { r: ext / 26, fill: 'var(--axis1)' }, g),
+    const FI = Math.floor(uniq.length / 2);   // one item featured with a bold, labelled reach
+    // faint perpendicular drops (construction only) + a dot where each item lands on the axis
+    const guides = uniq.map((_, k) => ({
+      drop: svgEl('line', { stroke: 'var(--muted)', 'stroke-dasharray': '3 3', 'stroke-width': 1,
+        opacity: k === FI ? .8 : .4, 'vector-effect': 'non-scaling-stroke' }, g),
+      tick: svgEl('circle', { r: ext / 30, fill: 'var(--axis1)', opacity: k === FI ? 1 : .6 }, g),
     }));
-    uniq.forEach(i => svgEl('circle', { cx: A0[i][0], cy: A0[i][1], r: ext / 22, fill: 'var(--ink-2)' }, g));
-    const labels = uniq.map(i => { const t = svgEl('text', { 'font-size': ext / 16, fill: 'var(--muted)',
+    // the featured item's loading, drawn BOLD as its reach along the axis, plus a label
+    const reach = svgEl('line', { stroke: 'var(--axis1)', 'stroke-width': 4.5, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, g);
+    const reachLab = svgEl('text', { 'font-size': ext / 15, fill: 'var(--axis1)', 'font-weight': 700,
+      'text-anchor': 'middle', transform: 'scale(1,-1)' }, g);
+    reachLab.textContent = 'loading';
+    uniq.forEach((i, k) => svgEl('circle', { cx: A0[i][0], cy: A0[i][1],
+      r: k === FI ? ext / 17 : ext / 24, fill: k === FI ? 'var(--ink)' : 'var(--ink-2)' }, g));
+    const labels = uniq.map((i, k) => { const t = svgEl('text', { 'font-size': ext / 16,
+      fill: k === FI ? 'var(--ink)' : 'var(--muted)', 'font-weight': k === FI ? 700 : 400,
       'text-anchor': 'middle', transform: 'scale(1,-1)' }, g); t.textContent = codes[i]; return t; });
     const knob = makeKnob(g, 1, ext);
 
     const barHost = $('#shadow-bars'); barHost.className = 'mbars';
     const bars = uniq.map((i, k) => {
       const row = el('div', { class: 'mbar-row' }, barHost);
-      el('span', { class: 'code', text: codes[i] }, row);
+      const code = el('span', { class: 'code', text: codes[i] }, row);
+      if (k === FI) code.style.color = 'var(--ink)';
       const track = el('div', { class: 'mbar-track' }, row);
       el('div', { class: 'zero' }, track);
       return el('div', { class: 'mbar-fill', style: `background:${AX1}` }, track);
     });
-    $('#shadow-note').textContent = 'One axis, five items. Each bar is that item’s loading = the length of its shadow along the axis.';
+    $('#shadow-note').textContent = 'One axis, five items. Each bar is that item’s loading — how far it reaches along the axis. The highlighted item shows that reach in bold; the dashed line is only how you find where it lands.';
 
     let theta = 20;
     const MAXL = Math.max(...uniq.map(i => Math.hypot(...A0[i]))) * 1.05;
@@ -1397,17 +1440,22 @@ function initBasics(pg) {
       placeKnob(knob, theta, ext);
       uniq.forEach((i, k) => {
         const [px, py] = A0[i];
-        const L = px * c + py * s;                 // loading = p·u (shadow length)
-        const qx = L * c, qy = L * s;              // foot of the shadow on the axis
+        const L = px * c + py * s;                 // loading = reach along the axis (p·u)
+        const qx = L * c, qy = L * s;              // where the item lands on the axis
         guides[k].drop.setAttribute('x1', px); guides[k].drop.setAttribute('y1', py);
         guides[k].drop.setAttribute('x2', qx); guides[k].drop.setAttribute('y2', qy);
-        guides[k].lead.setAttribute('x2', qx); guides[k].lead.setAttribute('y2', qy);
-        guides[k].lead.setAttribute('x1', 0); guides[k].lead.setAttribute('y1', 0);
         guides[k].tick.setAttribute('cx', qx); guides[k].tick.setAttribute('cy', qy);
         labels[k].setAttribute('x', px + ext / 12); labels[k].setAttribute('y', -py - ext / 22);
         const w = clamp(Math.abs(L) / MAXL, 0, 1) * 50;
         bars[k].style.width = w + '%';
         bars[k].style.left = L >= 0 ? '50%' : (50 - w) + '%';
+        if (k === FI) {                            // bold reach + label for the featured item
+          reach.setAttribute('x1', 0); reach.setAttribute('y1', 0);
+          reach.setAttribute('x2', qx); reach.setAttribute('y2', qy);
+          const nx = -s, ny = c, off = ext * 0.15; // nudge the label off the axis line
+          reachLab.setAttribute('x', qx / 2 + nx * off);
+          reachLab.setAttribute('y', -(qy / 2 + ny * off));
+        }
       });
     }
     wireDrag(svg, knob, a => { theta = a; render(); });
