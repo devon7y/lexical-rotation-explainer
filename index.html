@@ -683,7 +683,8 @@ footer p { color: var(--muted); }
         factor, not smeared across both. That clean pattern is what factor analysts call
         <strong>simple structure</strong>, and it is what every classical method is chasing.</p>
         <p>Try the two presets. <strong>Messy</strong> aims the axes between the clusters, so
-        almost every item loads middling on both (fat <span class="ink-x">cross-loadings</span>).
+        almost every item loads middling on both — a <span class="ink-x">cross-loading</span> is
+        exactly that, one item loading on <em>both</em> factors at once instead of cleanly on one.
         <strong>Clean</strong> aims them along the clusters. Or drag the handle yourself.</p>
         <div class="callout" style="border-left-color: var(--m-oblimin); margin-top: 1rem">
           <p id="ss-oblique-note"><strong>Why it never gets perfectly clean — and the real trade-off.</strong>
@@ -1742,19 +1743,46 @@ function initScoring(pg) {
   const CRIT = {
     varimax: { name: 'Varimax', kind: 'columns', color: 'var(--m-varimax)',
       formula: 'Σ over the 2 factors of  variance( squared loadings in that column )',
-      plain: 'Varimax wants each factor’s column to be a spread of big and near-zero squared loadings — a crisp defining cluster. It adds up the variance of the squared loadings within each column.',
+      plain: `<b>Squaring</b> a loading turns it into a plain size, dropping the +/− sign
+              (.8 → .64, .1 → .01). Now take one factor's 28 squared loadings and ask how
+              <b>spread out</b> they are. “<b>Variance</b>” is the standard spread number: it's
+              <em>large</em> when the values are a mix of big ones and near-zero ones, and
+              <em>small</em> when they're all middling. So varimax rewards each factor for having a
+              clear in-crowd of defining items and a lot of near-zeros — not everything loading
+              halfway. Add the spread of both columns.`,
       cap: 'higher = crisper (each factor has a clear defining set)' },
     quartimin: { name: 'Oblimin', kind: 'tiles', color: 'var(--m-oblimin)',
       formula: 'Σ over items of  L₁² · L₂²',
-      plain: 'Oblimin (the psychology default) adds up each item’s cross-loading product. An item on one factor contributes ≈ 0; an item smeared across both contributes a lot.',
+      plain: `A <b>cross-loading</b> is when one item loads on <em>both</em> factors at once (instead
+              of cleanly on one). To score it: take the item's two loadings, <b>square</b> each
+              (make them sizes), then <b>multiply</b> them, L₁²&nbsp;×&nbsp;L₂². A product is big
+              only when <em>both</em> parts are big — so it's ≈&nbsp;0 for an item that loads on a
+              single factor (one loading is tiny), and large only for an item split across both
+              (e.g. .6 and .6 → .36 × .36 ≈ .13). Add that over all 28 items; oblimin drives the
+              total <em>down</em>, forcing each item onto one factor.`,
       cap: 'lower = cleaner (fewer cross-loadings)' },
     geomin: { name: 'Geomin', kind: 'tiles', color: 'var(--m-geomin)',
       formula: 'Σ over items of  √( (L₁²+.01)(L₂²+.01) )',
-      plain: 'Geomin (the Mplus default) sums a softened geometric mean of each item’s squared loadings. The +.01 makes it tolerate a small second loading, so it’s gentler than oblimin.',
+      plain: `Same goal as oblimin — flag items that load on both — with a gentler measure. For each
+              item it takes the <b>geometric mean</b> of the two squared loadings: multiply them,
+              then take the <b>square root</b>. A geometric mean is an average that a single small
+              value drags toward zero — √(100&nbsp;×&nbsp;0.01)&nbsp;=&nbsp;1, nowhere near 50 — so it
+              too stays small whenever one loading is small. The <b>+.01</b> is a cushion so it never
+              hits exactly zero: geomin <em>tolerates</em> a small second loading instead of
+              punishing it, which makes it softer than oblimin. Add over items.`,
       cap: 'lower = cleaner' },
     nameability: { name: 'Leximax', kind: 'axes', color: 'var(--m-leximax)',
       formula: 'mean over the 2 axes of  cos( axis meaning , retrieved word )',
-      plain: 'Leximax scores an orientation by how nameable it is: for each axis it retrieves the nearest lexicon word, then measures the cosine between that axis’s meaning direction and the word’s embedding, and averages the two. It needs the full lexicon, so it’s read from the precomputed grid.',
+      plain: `Each axis is turned into a <b>meaning arrow</b>: take its top items, run their text
+              through a language model, and average the results (after subtracting the survey's
+              overall meaning) into a point in “meaning-space” — a long list of numbers that captures
+              what those items are <em>about</em>. The single nearest lexicon word to that point is
+              the <b>retrieved name</b>, which is itself a point in the same space.
+              <b>cos(&nbsp;)</b> is <b>cosine similarity</b> — the very “how much do these two line
+              up?” idea from step&nbsp;1, now measured between the axis's arrow and the word's arrow:
+              <b>1</b> = they point the same way (the word nails the axis), <b>0</b> = unrelated. Do
+              it for both axes and average the two match scores. (Needs the full lexicon, so it's read
+              from the precomputed grid.)`,
       cap: 'higher = the axes land on nameable words' },
   };
   const AX2 = cssHex('--axis2', '#e34948');
@@ -1812,7 +1840,7 @@ function initScoring(pg) {
     colWrap.style.display = m.kind === 'columns' ? '' : 'none';
     axisWrap.style.display = m.kind === 'axes' ? '' : 'none';
     $('#decon-eq').textContent = m.formula;
-    $('#decon-plain').textContent = m.plain;
+    $('#decon-plain').innerHTML = m.plain.replace(/\s+/g, ' ');   // static author markup
     $('#decon-cap').textContent = m.cap;
   }
   // paint the selected criterion's breakdown at the current θ
