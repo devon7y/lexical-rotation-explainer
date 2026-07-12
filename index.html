@@ -441,6 +441,9 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 .card h3 { display: flex; align-items: center; gap: .5rem; }
 .card h3 .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--mcol); flex: none; }
 .card p { font-size: .9rem; }
+.card .card-origin { font-size: .78rem; color: var(--muted); line-height: 1.5;
+  border-top: 1px solid var(--grid); padding-top: .55rem; margin-top: .1rem; }
+.card .card-origin b { color: var(--ink-2); font-weight: 650; }
 .card .mini { margin-top: auto; }
 .mini svg { width: 100%; height: auto; display: block; background: var(--page);
             border: 1px solid var(--grid); border-radius: 10px; }
@@ -940,6 +943,10 @@ footer p { color: var(--muted); }
     <p>Since every orientation fits equally well, each rotation method is just a
     <em>criterion</em> — a score that says which orientation to prefer. Watch each one pull
     the axes from a random start to its favorite answer.</p>
+    <p style="font-size:.9rem; color:var(--ink-2)">Even the <em>names</em> are formulas in
+    disguise: a prefix for <em>what</em> the method optimizes (<b>vari-</b>ance, <b>quarti-</b>c /
+    fourth powers, <b>geo-</b>metric mean, <b>obli-</b>que) and a suffix for <em>which way</em> —
+    <b>‑max</b> to maximize, <b>‑min</b> to minimize. Each card's “The name” line unpacks it.</p>
     <div class="cards" id="cards"></div>
     <div class="blindspot">
       <p><strong>Four rules, one blind spot.</strong> Varimax, quartimin, geomin and target
@@ -2290,6 +2297,8 @@ function initGallery(pg, P) {
 
   const defs = [
     { key: 'varimax',
+      origin: `<b>The name:</b> <b>vari-</b>ance + <b>-max</b>imize — it maximizes the variance of the
+               squared loadings. Coined by Henry Kaiser (1958).`,
       text: `Keep the axes perpendicular and spin them until every item's loadings are pushed
              toward “big or zero” — each factor gets a crisp defining cluster of items.
              Because the axes stay at 90°, the factors are forced to be uncorrelated.`,
@@ -2298,6 +2307,9 @@ function initGallery(pg, P) {
       crit: L => critVarimax(L), dir: 'maximize', rangeKey: 'varimax',
       angles: () => pg.solutions.varimax.axis_angles_deg },
     { key: 'oblimin',
+      origin: `<b>The name:</b> <b>obli-</b>que + <b>-min</b>imize — the family of criteria for tilted
+               axes (Carroll in the 1950s; the “direct” form is Jennrich & Sampson, 1966). The member
+               shown here, <b>quarti-min</b>, is built from the loadings' fourth powers.`,
       text: `The same “big or zero” goal, but the axes may tilt toward each other, so factors
              can correlate — psychology's default. It punishes cross-loadings: items that load
              on both factors at once.`,
@@ -2306,6 +2318,8 @@ function initGallery(pg, P) {
       crit: L => critQuartimin(L), dir: 'minimize', rangeKey: 'quartimin',
       angles: () => pg.solutions.oblimin.axis_angles_deg },
     { key: 'geominQ',
+      origin: `<b>The name:</b> <b>geo-</b>metric mean + <b>-min</b>imize — it minimizes a geometric
+               mean of the squared loadings. Introduced by Yates (1987); the default in Mplus.`,
       text: `Another simple-structure proxy, the default in Mplus: make the geometric mean of
              each item's squared loadings small, so most items lean on just one factor.`,
       math: `Minimize Σᵢ (Πf (L²ᵢf + ε))^(1/k) with ε = .01 — here, Σᵢ √((L²ᵢ₁+.01)(L²ᵢ₂+.01)).
@@ -2313,6 +2327,8 @@ function initGallery(pg, P) {
       crit: L => critGeomin(L), dir: 'minimize', rangeKey: 'geomin',
       angles: () => pg.solutions.geominQ.axis_angles_deg },
     { key: 'target',
+      origin: `<b>The name:</b> the odd one out — not a portmanteau but a plain description. You rotate
+               <em>toward a target</em> matrix (a Procrustes rotation).`,
       text: `You write down the loading pattern you expect — which items should define which
              factor — and the axes rotate toward that hand-specified target. Here the target is
              built from this scale's documented item groupings.`,
@@ -2321,6 +2337,9 @@ function initGallery(pg, P) {
       crit: L => critTarget(L, P.B), dir: 'minimize', rangeKey: 'target',
       angles: targetSolution },
     { key: 'leximax',
+      origin: `<b>The name:</b> <b>lexi-</b> (words) + <b>-max</b>imize — deliberately built to slot into
+               the same tradition, but it maximizes <em>nameability</em>, the one signal every method
+               above ignores. (Unrelated to the “leximax” ordering in social-choice theory.)`,
       text: `The words get a vote. Leximax alternates: NAME each axis (average the meaning
              vectors of its defining items, subtract the questionnaire's average meaning, and
              retrieve the nearest of 369,703 lexicon terms), then ROTATE toward the loading
@@ -2337,6 +2356,8 @@ function initGallery(pg, P) {
     const h = el('h3', {}, card);
     el('span', { class: 'dot' }, h); h.append(METHODS[d.key].name);
     el('p', { text: d.text.replace(/\s+/g, ' ') }, card);
+    // where the method's NAME comes from (static, author-controlled markup)
+    if (d.origin) { const o = el('p', { class: 'card-origin' }, card); o.innerHTML = d.origin.replace(/\s+/g, ' '); }
     const det = el('details', { class: 'math' }, card);
     el('summary', { text: 'the criterion (math)' }, det);
     el('div', { class: 'body', text: d.math.replace(/\s+/g, ' ') }, det);
