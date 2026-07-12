@@ -169,6 +169,23 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 /* ============================================================
    BASICS — three numbered building blocks
    ============================================================ */
+/* map-intro: what the map and points actually are (real data) */
+.mapintro { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; margin: 1.4rem 0 2.6rem; }
+@media (max-width: 820px) { .mapintro { grid-template-columns: 1fr; } }
+.mapintro-text h3 { font-size: 1.25rem; margin-bottom: .5rem; }
+.mapintro-text p { font-size: .96rem; }
+.map-bullets { margin: .7rem 0 0; padding-left: 1.1rem; font-size: .9rem; color: var(--ink-2); }
+.map-bullets li { margin-bottom: .5rem; }
+.mapintro-fig { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+#mapintro-svg { width: 100%; height: auto; min-width: 0; display: block; touch-action: none; }
+.mapintro-readout { background: var(--chip-bg); border-radius: 10px; padding: .7rem .9rem; font-size: .85rem; }
+.mapintro-readout .ro-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
+.mapintro-readout .ro-code { font-weight: 700; font-family: ui-monospace, Menlo, monospace; color: var(--ink); }
+.mapintro-readout .ro-con { font-size: .72rem; color: var(--muted); border: 1px solid var(--grid); border-radius: 999px; padding: .05rem .5rem; }
+.mapintro-readout .ro-text { color: var(--ink-2); font-style: italic; margin-bottom: .35rem; }
+.mapintro-readout .ro-line { color: var(--ink-2); }
+.mapintro-readout .ro-line b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
 .block {
   display: grid; grid-template-columns: 2.2rem 1fr 1fr; gap: 1.2rem 1.4rem;
   align-items: start; margin: 2.4rem 0;
@@ -556,9 +573,37 @@ footer p { color: var(--muted); }
   <div class="wrap">
     <h2>Building blocks: how to read the map</h2>
     <p class="lede">Before any method, three simple ideas. Take them one at a time and the
-    rest falls into place. <span style="color:var(--muted); font-size:.95rem">(The sketches in
-    steps 1–2 use a clean, made-up two-cluster example so the mechanics are easy to see; from the
-    next section on, everything is the real questionnaire.)</span></p>
+    rest falls into place. <span style="color:var(--muted); font-size:.95rem">(The map just below
+    uses your real questionnaire; the sketches in steps 1–2 switch to a clean, made-up two-cluster
+    example so the mechanics are easy to see.)</span></p>
+
+    <!-- MAP INTRO — what the map and points actually are -->
+    <div class="mapintro">
+      <div class="mapintro-text">
+        <h3>First: the map is a map of your <em>questions</em></h3>
+        <p>Here is the real PTQ map. The one thing to hold onto: <strong>each dot is one
+        questionnaire item — one question — not one person.</strong> The hundreds of people who
+        took the survey have been boiled down into <em>where the questions land</em>.</p>
+        <p>A question sits where it does because of how people answered it. Two questions land
+        <strong>close together when people tend to answer them alike</strong>; a question drifts
+        off on its own when its answers don't track the rest. A <strong>factor</strong> is nothing
+        more than a direction that a bunch of dots line up along.</p>
+        <ul class="map-bullets">
+          <li><strong>A dot's two coordinates are the item's “loadings”</strong> — its address on
+          the map. Hover any dot to read them off the two axes.</li>
+          <li><strong>Distance from the centre</strong> = how much the factors explain that item at
+          all. Far out = well captured; hugging the centre = mostly noise.</li>
+          <li><strong>The two axes drawn here are just the starting orientation</strong> the
+          software happened to pick — which way they <em>should</em> point is the whole question
+          this page is about.</li>
+        </ul>
+      </div>
+      <div class="mapintro-fig panel">
+        <svg id="mapintro-svg" aria-label="The real questionnaire map: each point is one item; hover a point to read its coordinates"></svg>
+        <div class="mapintro-readout" id="mapintro-readout"></div>
+        <p class="scatter-note" id="mapintro-note"></p>
+      </div>
+    </div>
 
     <!-- BLOCK 1 — a loading is a shadow -->
     <div class="block">
@@ -1208,6 +1253,67 @@ function placeKnob(grp, angle, r) {
 function initBasics(pg) {
   const AX1 = cssHex('--axis1', '#2a78d6'), AX2 = cssHex('--axis2', '#e34948');
   const MID = cssHex('--muted', '#898781');
+
+  /* ---------- MAP INTRO — what the map + points really are (real data) ---------- */
+  (function mapIntro() {
+    const svg = $('#mapintro-svg'), items = pg.items, RA = pg.A0;
+    const cons = [...new Set(items.map(it => it.construct))];
+    const ext = Math.max(...RA.flat().map(Math.abs)) * 1.5;
+    svg.setAttribute('viewBox', `${-ext * 1.16} ${-ext * 1.16} ${ext * 2.32} ${ext * 2.32}`);
+    const g = svgEl('g', { transform: 'scale(1,-1)' }, svg);
+    // faint fixed reference axes = the starting orientation the software picked
+    svgEl('line', { x1: -ext, y1: 0, x2: ext, y2: 0, stroke: 'var(--baseline)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, g);
+    svgEl('line', { x1: 0, y1: -ext, x2: 0, y2: ext, stroke: 'var(--baseline)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, g);
+    // text sits in the flipped group, so each label carries its own flip-back
+    const axLabel = (dx, dy, txt) => { const t = svgEl('text', { x: dx, y: -dy, 'font-size': ext / 17, fill: 'var(--muted)', 'text-anchor': 'middle', transform: 'scale(1,-1)' }, g); t.textContent = txt; };
+    // labels live in the empty left/top space (the cloud bunches to the right)
+    axLabel(-ext * 0.52, -ext * 0.11, 'factor 1');
+    axLabel(-ext * 0.24, ext * 0.86, 'factor 2');
+    svgEl('circle', { r: ext / 40, fill: 'var(--muted)' }, g);   // origin
+    // focus guides (arrow from origin + dashed coordinate drops), drawn under points
+    const arrow = svgEl('line', { stroke: 'var(--ink)', 'stroke-width': 1.5, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, g);
+    const dropX = svgEl('line', { stroke: 'var(--muted)', 'stroke-dasharray': '3 3', 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke' }, g);
+    const dropY = svgEl('line', { stroke: 'var(--muted)', 'stroke-dasharray': '3 3', 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke' }, g);
+    const pts = RA.map(([x, y], i) => {
+      if (items[i].construct === cons[1]) { const s = ext / 15; return svgEl('rect', { class: 'pt open', x: x - s / 2, y: y - s / 2, width: s, height: s, rx: s / 4, 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' }, g); }
+      return svgEl('circle', { class: 'pt', cx: x, cy: y, r: ext / 25 }, g);
+    });
+    const focusLabel = svgEl('text', { 'font-size': ext / 14, fill: 'var(--ink)', 'font-weight': '700', 'text-anchor': 'middle', transform: 'scale(1,-1)' }, g);
+    const ro = $('#mapintro-readout');
+    let cur = -1;
+    function focus(i) {
+      if (i === cur) return; cur = i;
+      pts.forEach((p, k) => { const on = k === i;
+        if (p.tagName === 'rect') p.setAttribute('stroke', on ? 'var(--ink)' : 'var(--ink-2)');
+        else p.setAttribute('fill', on ? 'var(--ink)' : 'var(--ink-2)'); });
+      const [x, y] = RA[i];
+      arrow.setAttribute('x1', 0); arrow.setAttribute('y1', 0); arrow.setAttribute('x2', x); arrow.setAttribute('y2', y);
+      dropX.setAttribute('x1', x); dropX.setAttribute('y1', y); dropX.setAttribute('x2', x); dropX.setAttribute('y2', 0);
+      dropY.setAttribute('x1', x); dropY.setAttribute('y1', y); dropY.setAttribute('x2', 0); dropY.setAttribute('y2', y);
+      focusLabel.setAttribute('x', x); focusLabel.setAttribute('y', -y - ext * 0.09); focusLabel.textContent = items[i].code;
+      const r = Math.hypot(x, y), comm = Math.min(99, Math.round((x * x + y * y) * 100));
+      ro.textContent = '';
+      const head = el('div', { class: 'ro-head' }, ro);
+      el('span', { class: 'ro-code', text: items[i].code }, head);
+      el('span', { class: 'ro-con', text: items[i].construct }, head);
+      const txt = el('div', { class: 'ro-text' }, ro); txt.textContent = '“' + items[i].text + '”';
+      const c = el('div', { class: 'ro-line' }, ro); c.append('coordinates (loadings): ');
+      const cb = el('b', {}, c); cb.textContent = `(${f2(x)}, ${f2(y)})`;
+      const dl = el('div', { class: 'ro-line' }, ro); dl.append('distance from centre: ');
+      const db = el('b', {}, dl); db.textContent = f2(r); dl.append(` — the factors capture ~${comm}% of how it’s answered`);
+    }
+    // generous transparent hit targets (points overlap in this scale)
+    RA.forEach(([x, y], i) => {
+      const h = svgEl('circle', { cx: x, cy: y, r: ext / 12, fill: 'transparent' }, g);
+      h.style.cursor = 'pointer';
+      h.addEventListener('pointermove', () => focus(i));
+      h.addEventListener('pointerdown', () => focus(i));
+    });
+    $('#mapintro-note').textContent = `● ${cons[0]}   ▢ ${cons[1] || ''} — hover any dot. ${items.length} items = ${items.length} dots.`;
+    // default to the most off-horizontal item so both coordinates are visibly nonzero
+    let d0 = -1, di = 0; RA.forEach(([x, y], i) => { if (Math.abs(y) > d0) { d0 = Math.abs(y); di = i; } });
+    focus(di);
+  })();
 
   /* A clean, made-up two-cluster example (deterministic). Real questionnaires
      have overlapping factors; this toy keeps the mechanics visible. Two clusters
