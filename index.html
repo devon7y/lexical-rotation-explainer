@@ -322,6 +322,54 @@ table.mini-loadings td:first-child, table.mini-loadings th:first-child { text-al
 .decon-agg-head, #decon-agg-head { font-weight: 650; }
 
 /* ============================================================
+   S6 — LEXIMAX DEEP DIVE
+   ============================================================ */
+#s6 { border-top: 1px solid var(--grid); }
+.deep-h3 { font-size: 1.3rem; margin: 2.4rem 0 .6rem; display: flex; align-items: center; gap: .6rem; }
+.deep-num { width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--m-leximax); color: #fff;
+  font-size: 1rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.deep-lab { margin: 1.2rem 0 1.4rem; }
+.deep-lab .lab-head { font-weight: 650; font-size: 1.02rem; margin-bottom: .3rem; }
+.deep-lab .lab-sub { font-size: .9rem; color: var(--ink-2); margin: 0 0 1rem; }
+.ms-wrap, .lab-wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 1.2rem; align-items: center; }
+@media (max-width: 720px) { .ms-wrap, .lab-wrap { grid-template-columns: 1fr; } }
+#ms-svg, #lab-svg { width: 100%; height: auto; min-width: 0; display: block; touch-action: none; cursor: grab; }
+#ms-svg:active { cursor: grabbing; }
+#lab-svg { cursor: default; }
+.ms-side, .lab-side { display: flex; flex-direction: column; gap: .8rem; min-width: 0; }
+.ms-readout, #lab-readout { display: flex; flex-direction: column; gap: .5rem; }
+.ms-row, .lab-row { background: var(--surface); border: 1px solid var(--grid); border-radius: 10px; padding: .55rem .8rem; }
+.ms-row .k, .lab-row .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); display: flex; align-items: center; gap: .4rem; }
+.ms-row .k .dot, .lab-row .k .dot { width: 9px; height: 9px; border-radius: 50%; }
+.ms-row .v { font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+.ms-row .cos { font-size: .82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; margin-top: .1rem; }
+.ms-presets, .lab-controls { display: flex; flex-wrap: wrap; gap: .45rem; }
+.ms-presets .msp, .lab-controls .labc {
+  border: 1.5px solid var(--grid); background: var(--page); color: var(--ink-2); border-radius: 999px;
+  padding: .34rem .8rem; cursor: pointer; font-size: .82rem; font-weight: 600; }
+.ms-presets .msp:hover, .lab-controls .labc:hover { background: var(--chip-bg); color: var(--ink); }
+.lab-controls .labc.primary { border-color: var(--m-leximax); color: var(--m-leximax); }
+.lab-controls .labc.run { background: var(--m-leximax); border-color: var(--m-leximax); color: #fff; }
+.lab-row .v { font-size: 1.05rem; font-weight: 700; }
+.lab-row .v.cos { font-size: .8rem; color: var(--ink-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+.lab-meter { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--ink-2); }
+.lab-meter-lbl { color: var(--muted); }
+.lab-meter-track { flex: 1; height: 8px; border-radius: 4px; background: var(--chip-bg); overflow: hidden; }
+.lab-meter-fill { height: 100%; width: 0%; background: var(--m-leximax); border-radius: 4px; transition: width .25s; }
+#lab-meter-val { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.lab-log { font-family: ui-monospace, Menlo, monospace; font-size: .74rem; color: var(--ink-2);
+  background: var(--chip-bg); border-radius: 8px; padding: .5rem .7rem; max-height: 7.5em; overflow-y: auto;
+  white-space: pre-wrap; min-height: 1.4em; }
+.deep-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.1rem 0; }
+@media (max-width: 640px) { .deep-steps { grid-template-columns: 1fr; } }
+.deep-step { background: var(--surface); border: 1px solid var(--grid); border-left: 4px solid var(--m-leximax);
+  border-radius: 0 12px 12px 0; padding: .8rem 1rem; }
+.deep-step p { font-size: .9rem; margin: .3rem 0 0; }
+.deep-step-tag { font-weight: 700; color: var(--ink); font-size: .95rem; }
+.deep-step-tag span { font-weight: 500; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.deep-analogy { display: block; margin-top: .4rem; font-size: .84rem; color: var(--muted); font-style: italic; }
+
+/* ============================================================
    S2 — PLAYGROUND
    ============================================================ */
 #s2 { background: var(--surface); border-top: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
@@ -575,6 +623,7 @@ footer p { color: var(--muted); }
     <a class="navlink" href="#s3">Methods</a>
     <a class="navlink" href="#s4">Cases</a>
     <a class="navlink" href="#s5">Scoreboard</a>
+    <a class="navlink" href="#s6">Deep dive</a>
   </div>
 </nav>
 
@@ -1060,6 +1109,125 @@ footer p { color: var(--muted); }
   </div>
 </section>
 
+<!-- ============================================================ S6 — LEXIMAX DEEP DIVE -->
+<section id="s6">
+  <div class="wrap">
+    <h2>What leximax really is</h2>
+    <p class="lede">Two questions, in depth: <strong>what</strong> does leximax optimize, and
+    <strong>how</strong> does it get there? Both parts below are hands-on.</p>
+
+    <!-- ===== PART 1 — the objective ===== -->
+    <h3 class="deep-h3"><span class="deep-num">1</span> What it maximizes: “nameability”</h3>
+    <p>Every other method scores the <em>arithmetic</em> of the loadings. Leximax's one novelty is
+    that its score looks at what the items <em>say</em> — it measures whether the factors can be
+    <strong>named</strong>. Precisely:</p>
+    <p>Each factor is turned into a single point in a language model's <strong>meaning-space</strong>,
+    its <strong>meaning vector</strong>: the <em>loading-weighted</em> average of that factor's
+    <em>defining</em> items' text embeddings (its dominant pole), minus the questionnaire's overall
+    average meaning (so it captures what's <em>distinctive</em> about the factor). Retrieve the
+    <strong>nearest of 369,703 lexicon words</strong> to that point — that is the factor's name — and
+    take the <strong>cosine</strong> between the meaning vector and that word.</p>
+    <div class="decon-formula">
+      <div class="f-eq">nameability = mean over factors of  cos( factor meaning vector , nearest lexicon word )</div>
+      <div class="f-plain">Because the word is the <b>nearest</b> one, that cosine is really <b>how
+      close the factor's meaning lands to any real word at all</b> — its nameability. Average over
+      the factors for the whole-solution score. And it is built <b>per factor</b>, from that factor's
+      own defining items — <em>not</em> the whole scale. That is what makes it move under rotation:
+      turning the axes reshuffles which items define which factor, so each factor's meaning drifts,
+      its nearest word can flip, and nameability rises or falls. Use all the items and it would be a
+      constant, with nothing to optimize.</div>
+    </div>
+
+    <div class="deep-lab panel">
+      <div class="lab-head">Drag a factor's meaning through meaning-space</div>
+      <p class="lab-sub">The dots are lexicon words. Drag the <span style="color:var(--axis1); font-weight:600">blue arrow</span>
+      — a factor's meaning direction. Its <strong>nearest word</strong> is the name it would retrieve;
+      the <strong>cosine</strong> to that word is the factor's nameability. Notice the name flip at the
+      midpoints between words, and the score peak when the arrow points straight at one.</p>
+      <div class="ms-wrap">
+        <svg id="ms-svg" aria-label="A schematic 2-D meaning-space: drag a factor's meaning arrow to see its nearest word and cosine"></svg>
+        <div class="ms-side">
+          <div id="ms-readout"></div>
+          <div class="ms-presets" id="ms-presets"></div>
+        </div>
+      </div>
+      <p class="we-note" id="ms-note"></p>
+    </div>
+
+    <!-- ===== PART 2 — the optimizer ===== -->
+    <h3 class="deep-h3"><span class="deep-num">2</span> How it optimizes: an alternating loop</h3>
+    <p>Leximax never sees the whole nameability landscape (that would need the full lexicon at every
+    angle). It <strong>climbs</strong> it, by alternating two steps — the same shape as
+    <strong>k-means</strong>, or as the <em>Target</em> rotation from the gallery but with a target
+    that rewrites itself. It starts from the oblimin solution, then repeats:</p>
+    <div class="deep-steps">
+      <div class="deep-step">
+        <div class="deep-step-tag" style="--mc: var(--m-leximax)">① NAME &nbsp;<span>freeze the axes</span></div>
+        <p>For each factor, build its meaning vector and snap to its <strong>nearest lexicon word</strong>.
+        <span class="deep-analogy">≈ k-means assigning each point to its nearest centroid — given where
+        the axes point, pick the best word.</span></p>
+      </div>
+      <div class="deep-step">
+        <div class="deep-step-tag" style="--mc: var(--m-leximax)">② ROTATE &nbsp;<span>freeze the words</span></div>
+        <p>Each word implies an ideal loading column — how semantically similar every item's text is to
+        it. Assemble those into a <strong>target matrix</strong> and do an oblique <strong>target
+        rotation</strong> of the axes to best match it.
+        <span class="deep-analogy">≈ k-means recomputing the centroids — move the axes to fit the
+        chosen words.</span></p>
+      </div>
+    </div>
+    <p>Repeat until the retrieved names <strong>stop changing</strong>. The names are discrete words, so
+    the fixed point is crisp: the same names two rounds running means the target you'd build from them
+    already agrees with the loadings they produce. <strong>Model fit never changes</strong> throughout —
+    only the orientation slides. Each step can only hold or raise the alignment, so nameability climbs
+    (weakly) monotonically to a <strong>local</strong> optimum — which is why the starting point
+    (oblimin) matters.</p>
+
+    <div class="callout" style="border-left-color: var(--m-leximax)">
+      <p><strong>“But the meaning vector needs the loadings — and the loadings come from leximax. Isn't
+      that circular?”</strong> Yes, and the loop is exactly how the circularity is broken. You never
+      have the final loadings up front. At each iteration you use the loadings of the <em>current</em>
+      orientation to weight the meaning vectors and retrieve names, then rotate to <em>new</em>
+      loadings, then re-weight, and so on — bootstrapped from oblimin's loadings on the very first pass.
+      It's the same chicken-and-egg every alternating method resolves: k-means needs the clusters to
+      place the centroids and the centroids to form the clusters, so it alternates from a guess. The
+      fixed point is precisely the orientation whose loadings, fed through naming, reproduce the very
+      loadings you started the step with.</p>
+    </div>
+
+    <div class="deep-lab panel">
+      <div class="lab-head">Watch the alternation converge</div>
+      <p class="lab-sub">Same meaning-space, now with <strong>items</strong> (small dots) grouped into two
+      factors. <strong>① Name</strong> snaps each factor to its nearest word; <strong>② Regroup</strong>
+      moves each item to the factor whose word fits it better. Alternate, and it settles — exactly the
+      loop above. Hit <strong>Scramble</strong> for a messy start and watch it climb.</p>
+      <div class="lab-controls" id="lab-controls"></div>
+      <div class="lab-wrap">
+        <svg id="lab-svg" aria-label="An alternating name-and-regroup loop in meaning-space that converges like k-means"></svg>
+        <div class="lab-side">
+          <div id="lab-readout"></div>
+          <div class="lab-meter">
+            <span class="lab-meter-lbl">nameability</span>
+            <div class="lab-meter-track"><div class="lab-meter-fill" id="lab-meter-fill"></div></div>
+            <span id="lab-meter-val">—</span>
+          </div>
+          <div id="lab-log" class="lab-log" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="border-left-color: var(--m-leximax)">
+      <p><strong>An honest note on convergence.</strong> The toy above starts messy so you can watch it
+      work. The <em>real</em> run on this scale barely moves: from the oblimin start the names are
+      already <em>anxiety</em> and <em>procrastination</em> and never change, and nameability nudges from
+      <b>.498</b> to <b>.509</b> in a single rotation before converging — a short, shallow climb, not a
+      long journey. That's the point of a fixed point: leximax has arrived when the axes' <em>own</em>
+      retrieved names are self-consistent, and here they already nearly are. (The playground's “Run
+      leximax” replays that real two-step path.)</p>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <p><strong>A note on the name:</strong> “leximax” here is <em>lexi-</em> (words) +
@@ -1272,6 +1440,7 @@ fetch('website_data.json')
     initGallery(data.ptq431, playground);
     initCases(data.dass, data.big5_human_semantic);
     initScoreboard(data.results_summary);
+    initLeximaxDeep(data.ptq431);
     initNavSpy();
     DARKMQ.addEventListener('change', () => initCases(data.dass, data.big5_human_semantic));
   })
@@ -2870,6 +3039,148 @@ function initScoreboard(rs) {
     const ol = el('ul', {}, notes);
     rs.notes.forEach(t => el('li', { text: t }, ol));
   }
+}
+
+/* ================================================================
+   S6 — LEXIMAX DEEP DIVE (two interactives in a schematic meaning-space)
+   ================================================================ */
+function initLeximaxDeep(pg) {
+  const AX1 = cssHex('--axis1', '#2a78d6'), AX2 = cssHex('--axis2', '#e34948');
+  // a schematic 2-D "meaning-space": lexicon words as directions (deg, ccw from +x).
+  // Two tight construct clusters with a large empty arc between/around them, so a factor
+  // that points into the void reads as un-nameable (low cosine) — the whole lesson.
+  const WORDS = [
+    { t: 'procrastination', a: 205 }, { t: 'delay', a: 218 }, { t: 'avoidance', a: 191 }, { t: 'idleness', a: 231 }, { t: 'dawdling', a: 245 },
+    { t: 'anxiety', a: 340 }, { t: 'worry', a: 326 }, { t: 'dread', a: 354 }, { t: 'nervousness', a: 313 }, { t: 'unease', a: 300 },
+  ];
+  const R = 92;
+  const angDist = (a, b) => { const d = Math.abs(((a - b) % 360 + 360) % 360); return d > 180 ? 360 - d : d; };
+  const nearestWord = deg => { let bi = 0, bd = 999; WORDS.forEach((w, i) => { const d = angDist(deg, w.a); if (d < bd) { bd = d; bi = i; } }); return bi; };
+  const wx = i => R * Math.cos(WORDS[i].a * DEG), wy = i => -R * Math.sin(WORDS[i].a * DEG);
+  function drawWordSpace(svg) {
+    svg.setAttribute('viewBox', '-180 -138 360 276');
+    svgEl('circle', { cx: 0, cy: 0, r: R, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }, svg);
+    svgEl('circle', { cx: 0, cy: 0, r: 2.5, fill: 'var(--muted)' }, svg);   // origin = the scale mean
+    return WORDS.map((w, i) => {
+      const dot = svgEl('circle', { cx: wx(i), cy: wy(i), r: 3.5, fill: 'var(--muted)' }, svg);
+      const c = Math.cos(w.a * DEG), lx = (R + 11) * c, ly = -(R + 11) * Math.sin(w.a * DEG);
+      const anchor = c > .3 ? 'start' : c < -.3 ? 'end' : 'middle';
+      const tx = svgEl('text', { x: lx, y: ly + 3, fill: 'var(--muted)', 'font-size': 9.5, 'text-anchor': anchor }, svg);
+      tx.textContent = w.t;
+      return { dot, tx };
+    });
+  }
+  const svgAngle = (svg, ev) => { const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+    const loc = pt.matrixTransform(svg.getScreenCTM().inverse()); return (Math.atan2(-loc.y, loc.x) / DEG + 360) % 360; };
+
+  /* ---------- Interactive A — drag a factor's meaning; see nearest word + cosine ---------- */
+  (function explorer() {
+    const svg = $('#ms-svg'); const wordEls = drawWordSpace(svg);
+    const hi = svgEl('line', { x1: 0, y1: 0, x2: 0, y2: 0, stroke: 'var(--muted)', 'stroke-dasharray': '3 3', 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke', opacity: .7 }, svg);
+    const arm = svgEl('line', { x1: 0, y1: 0, x2: 0, y2: 0, stroke: AX1, 'stroke-width': 3, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, svg);
+    const tip = svgEl('circle', { r: 6, fill: AX1, stroke: 'var(--surface)', 'stroke-width': 2 }, svg);
+    const ro = $('#ms-readout'); ro.textContent = '';
+    const row = el('div', { class: 'ms-row', style: `border-color:${AX1}` }, ro);
+    const kk = el('div', { class: 'k' }, row); el('span', { class: 'dot', style: `background:${AX1}` }, kk); kk.append('this factor retrieves');
+    const nameV = el('div', { class: 'v' }, row); const cosV = el('div', { class: 'cos' }, row);
+    $('#ms-note').innerHTML = 'A schematic 2-D sketch — real meaning-space has 300+ dimensions and the lexicon 369,703 words. The <b>cosine</b> here is the same alignment measure as the dial in “How each score”.';
+    const presets = $('#ms-presets'); presets.textContent = '';
+    [['Factor 1 (its items)', 205], ['Factor 2 (its items)', 340], ['point where no word lives', 100]].forEach(([lbl, a]) => {
+      el('button', { class: 'msp', text: lbl }, presets).onclick = () => { deg = a; render(); };
+    });
+    let deg = 205;
+    function render() {
+      const x = R * Math.cos(deg * DEG), y = -R * Math.sin(deg * DEG);
+      arm.setAttribute('x2', x); arm.setAttribute('y2', y); tip.setAttribute('cx', x); tip.setAttribute('cy', y);
+      const wi = nearestWord(deg);
+      wordEls.forEach((we, i) => { const on = i === wi; we.dot.setAttribute('r', on ? 6 : 3.5); we.dot.setAttribute('fill', on ? AX1 : 'var(--muted)');
+        we.tx.setAttribute('fill', on ? 'var(--ink)' : 'var(--muted)'); we.tx.setAttribute('font-weight', on ? 700 : 400); });
+      hi.setAttribute('x1', x); hi.setAttribute('y1', y); hi.setAttribute('x2', wx(wi)); hi.setAttribute('y2', wy(wi));
+      const gap = angDist(deg, WORDS[wi].a), cos = Math.cos(gap * DEG);
+      nameV.textContent = '“' + WORDS[wi].t + '”';
+      cosV.textContent = 'cosine (nameability) = ' + cos.toFixed(2) + '   ·   ' + Math.round(gap) + '° apart';
+    }
+    svg.onpointerdown = e => { svg.setPointerCapture(e.pointerId); deg = svgAngle(svg, e); render();
+      const mv = ev => { deg = svgAngle(svg, ev); render(); };
+      const up = () => { svg.removeEventListener('pointermove', mv); svg.removeEventListener('pointerup', up); };
+      svg.addEventListener('pointermove', mv); svg.addEventListener('pointerup', up); };
+    render();
+  })();
+
+  /* ---------- Interactive B — the alternating NAME/REGROUP loop (k-means shaped) ---------- */
+  (function lab() {
+    const svg = $('#lab-svg'); const wordEls = drawWordSpace(svg);
+    const FCOL = [AX1, AX2];
+    let seed = 7; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    // items = fixed directions, two loose clumps around the two construct clusters
+    const NI = 18, itemDir = [], itemRad = [];
+    for (let i = 0; i < NI; i++) { const base = i < NI / 2 ? 216 : 328;
+      itemDir.push((base + (rnd() * 2 - 1) * 30 + 360) % 360); itemRad.push(0.5 + rnd() * 0.28); }
+    const itemEls = itemDir.map((d, i) => svgEl('circle', { r: 4, cx: R * itemRad[i] * Math.cos(d * DEG), cy: -R * itemRad[i] * Math.sin(d * DEG),
+      fill: 'var(--muted)', 'fill-opacity': .9, stroke: 'var(--surface)', 'stroke-width': 1 }, svg));
+    const starWordLine = [0, 1].map(k => svgEl('line', { stroke: FCOL[k], 'stroke-dasharray': '3 3', 'stroke-width': 1.2, 'vector-effect': 'non-scaling-stroke', opacity: .6 }, svg));
+    const starLine = [0, 1].map(k => svgEl('line', { x1: 0, y1: 0, stroke: FCOL[k], 'stroke-width': 2.5, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke' }, svg));
+    const star = [0, 1].map(k => svgEl('circle', { r: 6, fill: FCOL[k], stroke: 'var(--surface)', 'stroke-width': 2 }, svg));
+    // a factor's "meaning" = the resultant of its items: DIRECTION + LENGTH (concentration R).
+    // A scattered factor has a short resultant → low nameability, even before naming.
+    const resultant = idxs => { let sx = 0, sy = 0; idxs.forEach(i => { sx += Math.cos(itemDir[i] * DEG); sy += Math.sin(itemDir[i] * DEG); });
+      return { dir: (Math.atan2(sy, sx) / DEG + 360) % 360, R: Math.hypot(sx, sy) / (idxs.length || 1) }; };
+    let assign = itemDir.map((_, i) => i < NI / 2 ? 0 : 1);
+    let starDir = [216, 328], starR = [.9, .9], word = [nearestWord(216), nearestWord(328)];
+    const ro = $('#lab-readout'); ro.textContent = '';
+    const rows = [0, 1].map(k => { const row = el('div', { class: 'lab-row', style: `border-color:${FCOL[k]}` }, ro);
+      const kk = el('div', { class: 'k' }, row); el('span', { class: 'dot', style: `background:${FCOL[k]}` }, kk); kk.append('Factor ' + (k + 1));
+      return { v: el('div', { class: 'v' }, row), c: el('div', { class: 'v cos' }, row) }; });
+    const meterFill = $('#lab-meter-fill'), meterVal = $('#lab-meter-val'), log = $('#lab-log');
+    let stepN = 0;
+    const nm = () => (starR[0] + starR[1]) / 2;
+    function draw() {
+      itemEls.forEach((e, i) => e.setAttribute('fill', FCOL[assign[i]]));
+      [0, 1].forEach(k => {
+        const rr = R * (0.52 + 0.36 * starR[k]);   // star reaches outward as its factor concentrates
+        const sx = rr * Math.cos(starDir[k] * DEG), sy = -rr * Math.sin(starDir[k] * DEG);
+        starLine[k].setAttribute('x2', sx); starLine[k].setAttribute('y2', sy); star[k].setAttribute('cx', sx); star[k].setAttribute('cy', sy);
+        starWordLine[k].setAttribute('x1', sx); starWordLine[k].setAttribute('y1', sy);
+        starWordLine[k].setAttribute('x2', wx(word[k])); starWordLine[k].setAttribute('y2', wy(word[k]));
+        rows[k].v.textContent = '“' + WORDS[word[k]].t + '”'; rows[k].c.textContent = 'concentration ' + starR[k].toFixed(2);
+      });
+      wordEls.forEach((we, i) => { const on = i === word[0] || i === word[1]; we.dot.setAttribute('r', on ? 5.5 : 3.5);
+        we.tx.setAttribute('fill', on ? 'var(--ink)' : 'var(--muted)'); we.tx.setAttribute('font-weight', on ? 700 : 400); });
+      meterFill.style.width = (clamp(nm(), 0, 1) * 100).toFixed(0) + '%'; meterVal.textContent = nm().toFixed(2);
+    }
+    // recompute each factor's resultant + retrieved word (optionally animate the swing)
+    const shortDiff = (a, b) => ((b - a + 540) % 360) - 180;
+    function nameStep(animate) {
+      const td = [...starDir], tR = [...starR], tw = [...word];
+      [0, 1].forEach(k => { const idxs = itemDir.map((_, i) => i).filter(i => assign[i] === k);
+        if (idxs.length) { const r = resultant(idxs); td[k] = r.dir; tR[k] = r.R; tw[k] = nearestWord(r.dir); } });
+      starR = tR; word = tw;
+      if (!animate || REDUCED.matches) { starDir = td; draw(); return Promise.resolve(); }
+      const from = [...starDir], dd = [shortDiff(from[0], td[0]), shortDiff(from[1], td[1])], t0 = performance.now();
+      return new Promise(res => { (function f(now) { const u = clamp((now - t0) / 430, 0, 1), e = easeInOut(u);
+        starDir = [(from[0] + dd[0] * e + 360) % 360, (from[1] + dd[1] * e + 360) % 360]; draw();
+        if (u < 1) requestAnimationFrame(f); else { starDir = td; draw(); res(); } })(t0); });
+    }
+    // move each item to the factor whose current meaning direction is nearer
+    function regroupStep() { let ch = 0; assign = itemDir.map((d, i) => { const n = angDist(d, starDir[0]) <= angDist(d, starDir[1]) ? 0 : 1; if (n !== assign[i]) ch++; return n; }); draw(); return ch; }
+    function logLine() { stepN++; log.textContent += `step ${stepN}: [${WORDS[word[0]].t}, ${WORDS[word[1]].t}]  nameability ${meterVal.textContent}\n`; log.scrollTop = log.scrollHeight; }
+    const pause = ms => new Promise(r => setTimeout(r, REDUCED.matches ? 40 : ms));
+    const ctr = $('#lab-controls'); ctr.textContent = '';
+    const mk = (lbl, cls, fn) => { const b = el('button', { class: 'labc' + (cls ? ' ' + cls : ''), text: lbl }, ctr); b.onclick = fn; return b; };
+    let running = false;
+    mk('① Name', 'primary', async () => { if (running) return; await nameStep(true); logLine(); });
+    mk('② Regroup', 'primary', () => { if (!running) regroupStep(); });
+    mk('Step', null, async () => { if (running) return; running = true; regroupStep(); await pause(280); await nameStep(true); logLine(); running = false; });
+    mk('▶ Run', 'run', async () => {
+      if (running) return; running = true;
+      for (let it = 0; it < 12; it++) { const ch = regroupStep(); await pause(320); await nameStep(true); logLine(); await pause(360);
+        if (ch === 0) { log.textContent += 'converged — names self-consistent ✓\n'; break; } }
+      running = false;
+    });
+    mk('Scramble', null, () => { if (running) return; assign = itemDir.map(() => rnd() < .5 ? 0 : 1); stepN = 0; log.textContent = ''; nameStep(false); logLine(); });
+    mk('Reset', null, () => { if (running) return; assign = itemDir.map((_, i) => i < NI / 2 ? 0 : 1); stepN = 0; log.textContent = ''; nameStep(false); logLine(); });
+    nameStep(false); logLine();
+  })();
 }
 
 /* ================================================================
